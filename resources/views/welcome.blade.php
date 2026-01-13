@@ -85,9 +85,15 @@
         <h1>🚀 Welcome to {{ config('app.name', 'Laravel') }}</h1>
         <p>Your Admin is ready. Please Login!</p>
         <div>
-            @if (Route::has('login'))
-                <a href="{{ route('login') }}" class="btn btn-register">Login</a>
-            @endif
+            <div>
+                @if (Route::has('login'))
+                    @auth
+                        <a href="{{ url('admin/dashboard') }}" class="btn btn-login">Dashboard</a>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-register">Login</a>
+                    @endauth
+                @endif
+            </div>
             {{-- @if (Route::has('register'))
                 <a href="{{ route('register') }}" class="btn btn-register">Register</a>
             @endif --}}

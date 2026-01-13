@@ -2,11 +2,11 @@
 
 use App\Http\Controllers\Admin\BlogController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\DynamicPageController;
-use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\SocialMediaController;
-use App\Http\Controllers\Admin\SystemSettingController;
+use App\Http\Controllers\Web\Backend\DashBoardController;
+use App\Http\Controllers\Web\Backend\DynamicPageController;
+use App\Http\Controllers\Web\Backend\ProfileController;
+use App\Http\Controllers\Web\Backend\SocialMediaController;
+use App\Http\Controllers\Web\Backend\SystemSettingController;
 
 Route::get('/dashboard', [DashBoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -28,10 +28,6 @@ Route::controller(SocialMediaController::class)->group(function () {
     Route::post('/social-media', 'update')->name('social.update');
     Route::delete('/social-media/{id}', 'destroy')->name('social.delete');
 });
-Route::resource('blogs', BlogController::class)->names('blogs');
-Route::post('blogs/{id}/status', [BlogController::class, 'updateStatus'])
-    ->name('blogs.updateStatus');
-
 Route::controller(DynamicPageController::class)->group(function () {
     Route::get('/dynamic-page', 'index')->name('dynamic_page.index');
     Route::get('/dynamic-page/create', 'create')->name('dynamic_page.create');

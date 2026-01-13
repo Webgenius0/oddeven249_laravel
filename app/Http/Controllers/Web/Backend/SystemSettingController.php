@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Web\Backend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -36,7 +36,7 @@ class SystemSettingController extends Controller
             'favicon'        => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'description'    => 'nullable|string',
         ]);
-        
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
