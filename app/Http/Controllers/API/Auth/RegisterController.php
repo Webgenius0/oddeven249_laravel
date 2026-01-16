@@ -29,7 +29,6 @@ class RegisterController extends Controller
             'email' => 'required|email',
             'name' => 'required|string',
             'password' => 'required|string',
-            'phone_code' => 'nullable|string|max:10',
             'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
@@ -69,7 +68,6 @@ class RegisterController extends Controller
             [
                 'name' => $data['name'],
                 'password' => Hash::make($data['password']),
-                'phone_code' => $data['phone_code'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'verification_code' => $code,
                 'expires_at' => Carbon::now('UTC')->addMinute(2),
@@ -96,7 +94,6 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'phone_code' => 'nullable|string|max:10',
             'phone' => 'nullable|string|max:20',
             'agree_to_terms' => 'required|boolean',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
