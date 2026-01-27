@@ -20,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->group(base_path('routes/frontend.php'));
         }
     )
+      ->withMiddleware(function (Middleware $middleware) {
+          // Register middleware alias
+          $middleware->alias([
+              'role' => \App\Http\Middleware\CheckRole::class,
+          ]);
+      })
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Web\Backend\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\Backend\DashBoardController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
@@ -36,4 +37,13 @@ Route::controller(DynamicPageController::class)->group(function () {
     Route::post('/dynamic-page/update/{id}', 'update')->name('dynamic_page.update');
     Route::get('/dynamic-page/status/{id}', 'status')->name('dynamic_page.status');
     Route::delete('/dynamic-page/destroy/{id}', 'destroy')->name('dynamic_page.destroy');
+});
+Route::prefix('category')->name('category.')->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->name('index');
+    Route::get('/create', [CategoryController::class, 'create'])->name('create');
+    Route::post('/store', [CategoryController::class, 'store'])->name('store');
+    Route::get('/edit/{id}', [CategoryController::class, 'edit'])->name('edit');
+    Route::post('/update/{id}', [CategoryController::class, 'update'])->name('update');
+    Route::get('/status/{id}', [CategoryController::class, 'status'])->name('status');
+    Route::delete('/destroy/{id}', [CategoryController::class, 'destroy'])->name('destroy');
 });

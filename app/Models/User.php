@@ -15,28 +15,30 @@ class User extends Authenticatable
     use Notifiable;
     use HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public const ROLE_INFLUENCER = 'influencer';
+    public const ROLE_ADVISER = 'adviser';
+    public const ROLE_AGENCY = 'agency';
+    public const ROLE_BUSINESS_MANAGER = 'business_manager';
+    public const ROLE_GUEST = 'guest';
+
     protected $fillable = [
         'name',
         'email',
-          'email_verified_at',
         'password',
+        'phone',
+        'phone_code',
+        'country',
+        'avatar',
+        'role',
+        'website_link',
+        'category_id',
+        'email_verified_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
         'email_verified_at',
-        'role',
         'provider',
         'provider_id',
         'created_at',
@@ -54,5 +56,83 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isInfluencer()
+    {
+        return $this->role === self::ROLE_INFLUENCER;
+    }
+
+    public function isAdviser()
+    {
+        return $this->role === self::ROLE_ADVISER;
+    }
+
+    public function isAgency()
+    {
+        return $this->role === self::ROLE_AGENCY;
+    }
+
+    public function isBusinessManager()
+    {
+        return $this->role === self::ROLE_BUSINESS_MANAGER;
+    }
+
+    public function isGuest()
+    {
+        return $this->role === self::ROLE_GUEST;
+    }
+
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
+
+    public function hasAnyRole(array $roles)
+    {
+        return in_array($this->role, $roles);
+    }
+
+    // Get all available roles
+    public static function getRoles()
+    {
+        return [
+            self::ROLE_INFLUENCER,
+            self::ROLE_ADVISER,
+            self::ROLE_AGENCY,
+            self::ROLE_BUSINESS_MANAGER,
+            self::ROLE_GUEST,
+        ];
+    }
+
+    // Scope for filtering by role
+    public function scopeRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    public function scopeInfluencers($query)
+    {
+        return $query->where('role', self::ROLE_INFLUENCER);
+    }
+
+    public function scopeAdvisers($query)
+    {
+        return $query->where('role', self::ROLE_ADVISER);
+    }
+
+    public function scopeAgencies($query)
+    {
+        return $query->where('role', self::ROLE_AGENCY);
+    }
+
+    public function scopeBusinessManagers($query)
+    {
+        return $query->where('role', self::ROLE_BUSINESS_MANAGER);
+    }
+
+    public function scopeGuests($query)
+    {
+        return $query->where('role', self::ROLE_GUEST);
     }
 }

@@ -19,20 +19,20 @@ class RegisterController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * Send OTP to temporary storage (5-minute validity)
-     */
     private function sendOtpTemp($data)
     {
-
         $validator = Validator::make($data, [
             'email' => 'required|email',
             'name' => 'required|string',
             'password' => 'required|string',
             'phone' => 'nullable|string|max:20',
+            'phone_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:20',
+            'role' => 'required|in:influencer,adviser,agency,business_manager,guest', // New validation
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'website_link' => 'nullable|url', // Added
+        'category_id' => 'nullable|exists:categories,id', // Added
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
@@ -56,11 +56,12 @@ class RegisterController extends Controller
                 ], 422);
             }
         }
-        // upload avatar if exists
+
         $avatarPath = null;
         if (isset($data['avatar']) && $data['avatar'] instanceof \Illuminate\Http\UploadedFile) {
             $avatarPath = uploadImage($data['avatar'], 'avatars');
         }
+
         $code = rand(1000, 9999);
 
         $tempUser = EmailOtp::updateOrCreate(
@@ -69,14 +70,18 @@ class RegisterController extends Controller
                 'name' => $data['name'],
                 'password' => Hash::make($data['password']),
                 'phone' => $data['phone'] ?? null,
+                'phone_code' => $data['phone_code'] ?? null,
+                'country' => $data['country'] ?? null,
                 'verification_code' => $code,
                 'expires_at' => Carbon::now('UTC')->addMinute(2),
                 'user_id' => null,
-                'avatar' => $avatarPath, // new line
+                'avatar' => $avatarPath,
+                'role' => $data['role'],
+                'website_link' => $data['website_link'] ?? null, // Added
+                'category_id' => $data['category_id'] ?? null,   // Added
             ]
         );
 
-        // Mail::to($tempUser->email)->send(new RegistrationOtp($tempUser, $code));
         return response()->json([
             'status' => true,
             'otp' => $code,
@@ -95,8 +100,13 @@ class RegisterController extends Controller
             'email' => 'required|email',
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => 'nullable|string|max:20',
+            'phone_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:50',
+            'role' => 'required|in:influencer,adviser,agency,business_manager,guest', // New validation
             'agree_to_terms' => 'required|boolean',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'website_link' => 'nullable|url', // Added
+            'category_id' => 'nullable|exists:categories,id', // Added
         ]);
 
         if ($validator->fails()) {
@@ -119,15 +129,10 @@ class RegisterController extends Controller
             }
         }
 
-        return $this->sendOtpTemp($request->only('name', 'email', 'password', 'phone_code', 'phone', 'avatar'));
+        return $this->sendOtpTemp($request->only('name', 'email', 'password', 'phone_code', 'country', 'phone', 'avatar', 'role', 'website_link', 'category_id'));
     }
-
-    /**
-     * Verify OTP and create user
-     */
     public function otpVerify(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:email_otps,email',
             'otp' => 'required|numeric|digits:4',
@@ -152,11 +157,15 @@ class RegisterController extends Controller
             'email' => $tempUser->email,
             'password' => $tempUser->password,
             'phone_code' => $tempUser->phone_code,
+            'country' => $tempUser->country,
             'phone' => $tempUser->phone,
             'email_verified_at' => now(),
             'avatar' => $tempUser->avatar,
+            'role' => $tempUser->role, // Add role
+            'website_link' => $tempUser->website_link, // Added
+            'category_id' => $tempUser->category_id,   // Added
         ]);
- 
+
         if ($request->has('device_token')) {
             $user->device_token = $request->device_token;
             $user->save();
@@ -227,5 +236,167 @@ class RegisterController extends Controller
         }
 
         return $this->success([], 'Email is available', 200);
+    }
+
+
+    /**
+ * Forgot Password - Send OTP
+ */
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), "Validation Error", 422);
+        }
+
+        // Check if there's an existing OTP that hasn't expired
+        $existingOtp = EmailOtp::where('email', $request->email)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if ($existingOtp) {
+            $expiresAt = Carbon::parse($existingOtp->expires_at)->setTimezone('UTC');
+            $now = Carbon::now('UTC');
+            $remaining = ceil($now->diffInSeconds($expiresAt));
+
+            return $this->error([], "Please wait {$remaining} seconds before requesting a new OTP.", 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        $code = rand(1000, 9999);
+
+        EmailOtp::updateOrCreate(
+            ['email' => $request->email],
+            [
+                'name' => $user->name,
+                'password' => $user->password, // Keep existing password
+                'phone' => $user->phone,
+                'verification_code' => $code,
+                'expires_at' => Carbon::now('UTC')->addMinute(5),
+                'user_id' => $user->id,
+                'avatar' => $user->avatar,
+            ]
+        );
+
+        // Mail::to($user->email)->send(new ForgotPasswordOtp($user, $code));
+
+        return $this->success([
+            'otp' => $code, // Remove this in production
+        ], 'Password reset OTP has been sent to your email', 200);
+    }
+
+    /**
+     * Verify Forgot Password OTP
+     */
+    public function verifyForgotPasswordOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|numeric|digits:4',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), "Validation Error", 422);
+        }
+
+        $tempUser = EmailOtp::where('email', $request->email)
+            ->where('verification_code', $request->otp)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$tempUser) {
+            return $this->error([], 'Invalid or expired OTP', 400);
+        }
+
+        // Generate a reset token for security
+        $resetToken = Str::random(60);
+
+        $tempUser->update([
+            'verification_code' => $resetToken, // Store reset token
+            'expires_at' => Carbon::now('UTC')->addMinute(15), // 15 minutes to reset password
+        ]);
+
+        return $this->success([
+            'token' => $resetToken,
+            'email' => $request->email,
+        ], 'OTP verified successfully. You can now reset your password.', 200);
+    }
+
+    /**
+     * Reset Password
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required|string',
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), "Validation Error", 422);
+        }
+
+        $tempUser = EmailOtp::where('email', $request->email)
+            ->where('verification_code', $request->token)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$tempUser) {
+            return $this->error([], 'Invalid or expired reset token', 400);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        // Delete the OTP record
+        $tempUser->delete();
+
+        return $this->success([], 'Password has been reset successfully', 200);
+    }
+
+    /**
+     * Resend Forgot Password OTP
+     */
+    public function resendForgotPasswordOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), "Validation Error", 422);
+        }
+
+        $tempUser = EmailOtp::where('email', $request->email)->first();
+
+        if (!$tempUser) {
+            return $this->error([], 'No OTP request found for this email', 404);
+        }
+
+        $expiresAt = Carbon::parse($tempUser->expires_at)->setTimezone('UTC');
+        $now = Carbon::now('UTC');
+
+        if ($now->lt($expiresAt)) {
+            $remaining = ceil($now->diffInSeconds($expiresAt));
+            return $this->error([], "Please wait {$remaining} seconds before requesting a new OTP", 422);
+        }
+
+        $code = rand(1000, 9999);
+        $tempUser->update([
+            'verification_code' => $code,
+            'expires_at' => Carbon::now('UTC')->addMinute(5),
+        ]);
+
+        // Mail::to($tempUser->email)->send(new ForgotPasswordOtp($tempUser, $code));
+
+        return $this->success([
+            'otp' => $code, // Remove this in production
+        ], 'Password reset OTP has been resent successfully.', 200);
     }
 }

@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
             SystemSettingSeeder::class,
             SocialMediaSeeder::class,
             DynamicPagesSeeder::class,
-            UserSeeder::class
+            UserSeeder::class,
+            CategorySeeder::class
         ]);
     }
 }

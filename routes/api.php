@@ -26,6 +26,11 @@ Route::controller(RegisterController::class)->prefix('users/register')->group(fu
     Route::post('/otp-resend', 'otpResend');
     //email exists check
     Route::post('/email-exists', 'emailExists');
+
+    Route::post('/forgot-password', 'forgotPassword');
+    Route::post('/verify-forgot-password-otp', 'verifyForgotPasswordOtp');
+    Route::post('/reset-password', 'resetPassword');
+    Route::post('/resend-forgot-password-otp', 'resendForgotPasswordOtp');
 });
 Route::controller(LoginController::class)->prefix('users/login')->group(function () {
 

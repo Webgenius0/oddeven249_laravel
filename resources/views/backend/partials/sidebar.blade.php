@@ -42,7 +42,7 @@
                    <li class="sidebar-list">
                        <i class="fa fa-thumb-tack"></i>
                        <a class="sidebar-link sidebar-title
-        {{ request()->routeIs('admin.system.*') || request()->routeIs('admin.profile.*') || request()->routeIs('admin.social.*') ? 'active' : '' }}"
+                      {{ request()->routeIs('admin.system.*') || request()->routeIs('admin.profile.*') || request()->routeIs('admin.social.*') ? 'active' : '' }}"
                            href="#">
                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
                                fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="round"
@@ -111,34 +111,35 @@
                            <h6 class="lan-8">Applications</h6>
                        </div>
                    </li>
-                   {{-- <li class="sidebar-list">
+                   <li class="sidebar-list">
                        <i class="fa fa-thumb-tack"></i>
-                       <a class="sidebar-link sidebar-title {{ request()->routeIs('admin.blogs.*') ? 'active' : '' }}"
+                       <a class="sidebar-link sidebar-title {{ request()->routeIs('admin.category.*') ? 'active' : '' }}"
                            href="#">
                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
                                fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="round"
                                stroke-linejoin="round">
-                               <path
-                                   d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9z" />
-                               <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" />
+                               <path d="M4 4h6v6h-6z" />
+                               <path d="M14 4h6v6h-6z" />
+                               <path d="M4 14h6v6h-6z" />
+                               <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
                            </svg>
-                           <span>Blogs</span>
+                           <span>Categories</span>
                        </a>
-                       <ul class="sidebar-submenu {{ request()->routeIs('admin.blogs.*') ? 'd-block' : '' }}">
+                       <ul class="sidebar-submenu {{ request()->routeIs('admin.category.*') ? 'd-block' : '' }}">
                            <li>
-                               <a class="{{ request()->routeIs('admin.blogs.index') ? 'active' : '' }}"
-                                   href="{{ route('admin.blogs.index') }}">
-                                   Blog List
+                               <a class="{{ request()->routeIs('admin.category.index') ? 'active' : '' }}"
+                                   href="{{ route('admin.category.index') }}">
+                                   Category List
                                </a>
                            </li>
                            <li>
-                               <a class="{{ request()->is('admin/blogs/list-view') ? 'active' : '' }}"
-                                   href="job-list-view.html">
-                                   List View
+                               <a class="{{ request()->routeIs('admin.category.create') ? 'active' : '' }}"
+                                   href="{{ route('admin.category.create') }}">
+                                   Add Category
                                </a>
                            </li>
                        </ul>
-                   </li> --}}
+                   </li>
                </ul>
                <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>
            </div>
