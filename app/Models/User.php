@@ -16,7 +16,7 @@ class User extends Authenticatable
     use HasApiTokens;
 
     public const ROLE_INFLUENCER = 'influencer';
-    public const ROLE_ADVISER = 'adviser';
+    public const ROLE_ADVERTISER = 'advertiser';
     public const ROLE_AGENCY = 'agency';
     public const ROLE_BUSINESS_MANAGER = 'business_manager';
     public const ROLE_GUEST = 'guest';
@@ -40,6 +40,7 @@ class User extends Authenticatable
         'remember_token',
         'email_verified_at',
         'provider',
+        'phone_code',
         'provider_id',
         'created_at',
         'updated_at',
@@ -63,9 +64,9 @@ class User extends Authenticatable
         return $this->role === self::ROLE_INFLUENCER;
     }
 
-    public function isAdviser()
+    public function isAdvertiser()
     {
-        return $this->role === self::ROLE_ADVISER;
+        return $this->role === self::ROLE_ADVERTISER;
     }
 
     public function isAgency()
@@ -98,7 +99,7 @@ class User extends Authenticatable
     {
         return [
             self::ROLE_INFLUENCER,
-            self::ROLE_ADVISER,
+            self::ROLE_ADVERTISER,
             self::ROLE_AGENCY,
             self::ROLE_BUSINESS_MANAGER,
             self::ROLE_GUEST,
@@ -118,7 +119,7 @@ class User extends Authenticatable
 
     public function scopeAdvisers($query)
     {
-        return $query->where('role', self::ROLE_ADVISER);
+        return $query->where('role', self::ROLE_ADVERTISER);
     }
 
     public function scopeAgencies($query)
@@ -134,5 +135,14 @@ class User extends Authenticatable
     public function scopeGuests($query)
     {
         return $query->where('role', self::ROLE_GUEST);
+    }
+    public function influencerDeals()
+    {
+        return $this->hasMany(Deal::class, 'influencer_id');
+    }
+
+    public function advertiserDeals()
+    {
+        return $this->hasMany(Deal::class, 'advertiser_id');
     }
 }

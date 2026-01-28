@@ -8,7 +8,7 @@ return new class () extends Migration {
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['influencer', 'adviser', 'agency', 'business_manager', 'guest'])
+            $table->enum('role', ['influencer', 'advertiser', 'agency', 'business_manager', 'guest'])
                   ->default('guest')
                   ->after('email');
         });

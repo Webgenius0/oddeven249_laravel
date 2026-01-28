@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\DealsController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
 use App\Http\Controllers\Api\SystemSettingController;
@@ -65,6 +66,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/update-password', 'updatePassword');
         Route::delete('/delete-account', 'deleteAccount');
         Route::post('/logout', 'logoutUser');
+    });
+    Route::prefix('deals')->controller(DealsController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/store', 'store');
     });
 
 });

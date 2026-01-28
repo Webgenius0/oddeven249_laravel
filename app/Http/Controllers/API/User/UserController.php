@@ -47,7 +47,6 @@ class UserController extends Controller
             }
 
             $user->name           = $request->input('name', $user->name);
-            $user->code = $request->input('code');
             $user->phone          = $request->input('phone', $user->phone);
             $user->save();
 
