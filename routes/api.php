@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\DealsController;
+use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
 use App\Http\Controllers\Api\SystemSettingController;
@@ -70,6 +71,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('deals')->controller(DealsController::class)->group(function () {
         Route::get('/', 'index');
         Route::post('/store', 'store');
+        Route::post('/update-status', 'updateStatus');
+        Route::get('/show', 'show');
+        Route::post('/rate-deal', 'rateDeal');
+        Route::get('/rating-details', 'getRatingDetails');
+    });
+    Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/show', 'show');
+        Route::post('/update', 'update');
+        Route::get('/my-portfolio', 'myPortfolios');
+        Route::post('/store', 'store');
+        Route::post('/toggle-bookmark', 'toggleBookmark');
+        Route::get('/my-bookmarks', 'myBookmarks');
     });
 
 });

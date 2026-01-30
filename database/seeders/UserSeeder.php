@@ -16,10 +16,16 @@ class UserSeeder extends Seeder
             'name' => 'User',
             'email' => 'user@user.com',
             'password' => Hash::make('12345678'),
+            'role' => 'advertiser',
             'email_verified_at' => Carbon::now(),
         ]);
-
-        // Admin User
+        User::create([
+                    'name' => 'Influencer User',
+                    'email' => 'influencer@gmail.com',
+                    'password' => Hash::make('12345678'),
+                    'role' => 'influencer',
+                    'email_verified_at' => Carbon::now(),
+                ]);
         User::create([
             'name' => 'Admin',
             'email' => 'admin@admin.com',
