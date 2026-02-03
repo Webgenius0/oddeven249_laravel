@@ -87,40 +87,57 @@ class PortfolioService
     }
     public function updatePortfolio($user, $id, array $data)
     {
+        // Eager load user to check manager relationship efficiently
         $portfolio = $this->portfolioRepo->getById($id);
-        if (!$portfolio) {
 
+        if (!$portfolio) {
             throw new \Exception("Portfolio not found.", 404);
         }
-        if ((int) $portfolio->user_id !== (int) $user->id) {
+
+        // Professional Authorization Check
+        $isOwner = (int) $portfolio->user_id === (int) $user->id;
+        $isManager = (int) $portfolio->user->parent_id === (int) $user->id;
+
+        if (!$isOwner && !$isManager) {
             throw new \Exception("You are not authorized to edit this portfolio.", 403);
         }
 
+        return \DB::transaction(function () use ($portfolio, $id, $data) {
+            // 1. Update Portfolio Details
+            $this->portfolioRepo->update($id, [
+                'title'       => $data['title'],
+                'description' => $data['description'] ?? $portfolio->description,
+            ]);
 
-        $this->portfolioRepo->update($id, [
-            'title'       => $data['title'],
-            'description' => $data['description'] ?? $portfolio->description,
-        ]);
-
-        if (isset($data['delete_media_ids'])) {
-            foreach ($data['delete_media_ids'] as $mediaId) {
-                $this->portfolioRepo->deleteMedia($mediaId);
-            }
-        }
-
-        if (isset($data['new_media']) && is_array($data['new_media'])) {
-            foreach ($data['new_media'] as $item) {
-                if (isset($item['file'])) {
-                    $path = uploadImage($item['file'], 'portfolios');
-                    $this->portfolioRepo->addMedia($portfolio->id, [
-                        'media_url'  => $path,
-                        'media_type' => $item['media_type'],
-                        'title'      => $item['title'] ?? null,
-                    ]);
+            // 2. Update Existing Media Titles
+            if (!empty($data['update_media'])) {
+                foreach ($data['update_media'] as $item) {
+                    $this->portfolioRepo->updateMedia($item['id'], ['title' => $item['title']]);
                 }
             }
-        }
 
-        return $portfolio->load('media');
+            // 3. Delete Requested Media (Should also delete files from storage)
+            if (!empty($data['delete_media_ids'])) {
+                foreach ($data['delete_media_ids'] as $mediaId) {
+                    $this->portfolioRepo->deleteMedia($mediaId);
+                }
+            }
+
+            // 4. Handle New Media Uploads
+            if (!empty($data['new_media'])) {
+                foreach ($data['new_media'] as $item) {
+                    if (isset($item['file'])) {
+                        $path = uploadImage($item['file'], 'portfolios');
+                        $this->portfolioRepo->addMedia($portfolio->id, [
+                            'media_url'  => $path,
+                            'media_type' => $item['media_type'],
+                            'title'      => $item['title'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            return $portfolio->fresh('media');
+        });
     }
 }

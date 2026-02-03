@@ -75,6 +75,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/show', 'show');
         Route::post('/rate-deal', 'rateDeal');
         Route::get('/rating-details', 'getRatingDetails');
+        Route::post('/submit-delivery', 'submitDelivery');
+        Route::post('/request-extension', 'requestExtension');
+        Route::post('/process-delivery', 'processDeliveryAction');
+        Route::post('/process-extension', 'processExtensionAction');
+        Route::get('/extension-history', 'getAllExtensionRequests');
     });
     Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
         Route::get('/', 'index');
@@ -85,5 +90,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/toggle-bookmark', 'toggleBookmark');
         Route::get('/my-bookmarks', 'myBookmarks');
     });
-
 });

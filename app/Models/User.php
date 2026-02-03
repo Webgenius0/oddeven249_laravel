@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,11 +9,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
     use Notifiable;
     use HasApiTokens;
 
+    // Roles definition
     public const ROLE_INFLUENCER = 'influencer';
     public const ROLE_ADVERTISER = 'advertiser';
     public const ROLE_AGENCY = 'agency';
@@ -22,127 +21,47 @@ class User extends Authenticatable
     public const ROLE_GUEST = 'guest';
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-        'phone_code',
-        'country',
-        'avatar',
-        'role',
-        'website_link',
-        'category_id',
-        'email_verified_at',
+        'name', 'email', 'password', 'role', 'parent_id', 'avatar',
+        'phone', 'phone_code', 'country', 'website_link', 'category_id'
     ];
 
     protected $hidden = [
-        'password',
-        'remember_token',
-        'email_verified_at',
-        'provider',
-        'phone_code',
-        'provider_id',
-        'created_at',
-        'updated_at',
-        'deleted_at',
+        'password', 'remember_token', 'created_at', 'updated_at',
     ];
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    public function isInfluencer()
-    {
-        return $this->role === self::ROLE_INFLUENCER;
-    }
-
-    public function isAdvertiser()
-    {
-        return $this->role === self::ROLE_ADVERTISER;
-    }
-
-    public function isAgency()
-    {
-        return $this->role === self::ROLE_AGENCY;
-    }
 
     public function isBusinessManager()
     {
         return $this->role === self::ROLE_BUSINESS_MANAGER;
     }
 
-    public function isGuest()
+    public function parent()
     {
-        return $this->role === self::ROLE_GUEST;
+        return $this->belongsTo(User::class, 'parent_id');
+    }
+    public function managers()
+    {
+        return $this->hasMany(User::class, 'parent_id');
+    }
+    public function dealsAsSeller()
+    {
+        return $this->hasMany(Deal::class, 'seller_id');
     }
 
-    public function hasRole($role)
+    public function dealsAsBuyer()
     {
-        return $this->role === $role;
+        return $this->hasMany(Deal::class, 'buyer_id');
     }
 
-    public function hasAnyRole(array $roles)
+    public function requestedDeals()
     {
-        return in_array($this->role, $roles);
+        return $this->hasMany(Deal::class, 'requested_by');
     }
-
-    // Get all available roles
-    public static function getRoles()
+    public function manager()
     {
-        return [
-            self::ROLE_INFLUENCER,
-            self::ROLE_ADVERTISER,
-            self::ROLE_AGENCY,
-            self::ROLE_BUSINESS_MANAGER,
-            self::ROLE_GUEST,
-        ];
+        return $this->belongsTo(User::class, 'parent_id');
     }
-
-    // Scope for filtering by role
-    public function scopeRole($query, $role)
+    public function subordinates()
     {
-        return $query->where('role', $role);
-    }
-
-    public function scopeInfluencers($query)
-    {
-        return $query->where('role', self::ROLE_INFLUENCER);
-    }
-
-    public function scopeAdvisers($query)
-    {
-        return $query->where('role', self::ROLE_ADVERTISER);
-    }
-
-    public function scopeAgencies($query)
-    {
-        return $query->where('role', self::ROLE_AGENCY);
-    }
-
-    public function scopeBusinessManagers($query)
-    {
-        return $query->where('role', self::ROLE_BUSINESS_MANAGER);
-    }
-
-    public function scopeGuests($query)
-    {
-        return $query->where('role', self::ROLE_GUEST);
-    }
-    public function influencerDeals()
-    {
-        return $this->hasMany(Deal::class, 'influencer_id');
-    }
-
-    public function advertiserDeals()
-    {
-        return $this->hasMany(Deal::class, 'advertiser_id');
+        return $this->hasMany(User::class, 'parent_id');
     }
 }

@@ -32,5 +32,12 @@ class UserSeeder extends Seeder
             'password' => Hash::make('12345678'),
             'email_verified_at' => Carbon::now(),
         ]);
+        User::create([
+            'name' => 'Agency User',
+            'email' => 'agency@agency.com',
+            'password' => Hash::make('12345678'),
+            'role' => 'agency',
+            'email_verified_at' => Carbon::now(),
+        ]);
     }
 }

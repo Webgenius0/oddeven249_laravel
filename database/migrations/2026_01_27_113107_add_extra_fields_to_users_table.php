@@ -5,13 +5,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class () extends Migration {
-    public function up(): void
+    public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('website_link')->nullable()->after('email'); 
-            $table->foreignId('category_id')->nullable()->after('website_link')
-                  ->constrained('categories') 
-                  ->onDelete('set null'); 
+
+            $table->unsignedBigInteger('parent_id')->nullable()->after('role');
+            $table->foreign('parent_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 

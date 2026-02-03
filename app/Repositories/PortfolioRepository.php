@@ -77,7 +77,10 @@ class PortfolioRepository
     {
         return \App\Models\Portfolio::where('id', $id)->update($data);
     }
-
+    public function updateMedia($mediaId, array $data)
+    {
+        return \App\Models\PortfolioMedia::where('id', $mediaId)->update($data);
+    }
     public function deleteMedia($mediaId)
     {
         $media = \App\Models\PortfolioMedia::find($mediaId);

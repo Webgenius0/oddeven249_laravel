@@ -77,21 +77,32 @@ class PortfolioController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'id'                  => 'required',
-            'title'               => 'required|string|max:255',
-            'description'         => 'nullable|string',
-            'new_media'           => 'nullable|array',
-            'new_media.*.file'    => 'required|file|mimes:jpg,jpeg,png,mp4,mov|max:20480',
-            'new_media.*.media_type' => 'required|in:photo,video',
-            'delete_media_ids'    => 'nullable|array',
-            'delete_media_ids.*'  => 'exists:portfolio_media,id',
+            'id'                     => 'required|exists:portfolios,id',
+            'title'                  => 'required|string|max:255',
+            'description'            => 'nullable|string',
+            // Existing media title update
+            'update_media'           => 'nullable|array',
+            'update_media.*.id'      => 'required|exists:portfolio_media,id',
+            'update_media.*.title'   => 'nullable|string|max:255',
+            // New media upload
+            'new_media'              => 'nullable|array',
+            'new_media.*.file'       => 'required_with:new_media|file|mimes:jpg,jpeg,png,mp4,mov|max:20480',
+            'new_media.*.media_type' => 'required_with:new_media|in:photo,video',
+            // Media deletion
+            'delete_media_ids'       => 'nullable|array',
+            'delete_media_ids.*'     => 'exists:portfolio_media,id',
         ]);
-        $id = $request->id;
+
         try {
-            $portfolio = $this->portfolioService->updatePortfolio(Auth::user(), $id, $request->all());
+            $portfolio = $this->portfolioService->updatePortfolio(
+                $request->user(),
+                $request->id,
+                $request->all()
+            );
             return $this->success($portfolio, 'Portfolio updated successfully!');
         } catch (\Exception $e) {
-            return $this->error(null, $e->getMessage(), 500);
+            $code = $e->getCode() ?: 500;
+            return $this->error(null, $e->getMessage(), $code);
         }
     }
     public function myBookmarks()
