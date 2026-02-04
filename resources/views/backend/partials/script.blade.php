@@ -57,7 +57,30 @@
         });
     </script>
 @endif
-
+<script>
+    $(document).ready(function() {
+        @if (session('t-success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: "{{ session('t-success') }}",
+                showConfirmButton: false,
+                timer: 2000,
+                customClass: {
+                    popup: 'border-radius-10'
+                }
+            });
+        @endif
+        @if (session('t-error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: "{{ session('t-error') }}",
+                confirmButtonColor: '#d33'
+            });
+        @endif
+    });
+</script>
 @if (session('error'))
     <script>
         Swal.fire({

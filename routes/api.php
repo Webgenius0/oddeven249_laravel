@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\ContestController;
 use App\Http\Controllers\Api\DealsController;
+use App\Http\Controllers\Api\InteractionController;
 use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
@@ -81,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/process-extension', 'processExtensionAction');
         Route::get('/extension-history', 'getAllExtensionRequests');
     });
+
     Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
         Route::get('/', 'index');
         Route::get('/show', 'show');
@@ -89,5 +92,39 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/store', 'store');
         Route::post('/toggle-bookmark', 'toggleBookmark');
         Route::get('/my-bookmarks', 'myBookmarks');
+    });
+
+    Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/show', 'show');
+        Route::post('/update', 'update');
+        Route::get('/my-portfolio', 'myPortfolios');
+        Route::post('/store', 'store');
+        Route::post('/toggle-bookmark', 'toggleBookmark');
+        Route::get('/my-bookmarks', 'myBookmarks');
+    });
+
+    Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/show', 'show');
+        Route::post('/update', 'update');
+        Route::get('/my-portfolio', 'myPortfolios');
+        Route::post('/store', 'store');
+        Route::post('/toggle-bookmark', 'toggleBookmark');
+        Route::get('/my-bookmarks', 'myBookmarks');
+    });
+    Route::prefix('contest')->controller(ContestController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/show', 'show');
+        Route::get('/contest-details', 'contestDetails');
+        Route::post('/update', 'update');
+        Route::get('/my-contests', 'myContests');
+        Route::get('/participated-contests', 'participatedContests');
+        Route::post('/store', 'store');
+        Route::post('/join-contest', 'join');
+    });
+
+    Route::prefix('interactions')->controller(InteractionController::class)->group(function () {
+        Route::post('/store', 'handle');
     });
 });

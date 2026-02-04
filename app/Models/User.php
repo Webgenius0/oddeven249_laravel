@@ -64,4 +64,25 @@ class User extends Authenticatable
     {
         return $this->hasMany(User::class, 'parent_id');
     }
+    public function createdContests()
+    {
+        return $this->hasMany(Contest::class, 'creator_id');
+    }
+
+    public function sponsoredContests()
+    {
+        return $this->hasMany(Sponsorship::class, 'sponsor_id');
+    }
+
+    public function collaborationContests()
+    {
+        return $this->belongsToMany(Contest::class, 'contest_collaborators')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+    public function participatedContests()
+    {
+        return $this->hasMany(ContestParticipant::class);
+    }
 }

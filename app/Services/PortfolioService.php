@@ -60,9 +60,18 @@ class PortfolioService
     {
         return \App\Models\BookmarkedPortfolio::where('user_id', $user->id)
             ->with([
-            'portfolio.media',
-            'portfolio.user:id,name,role'
-          ])
+                'portfolio' => function ($query) {
+                    $query->with(['media', 'user:id,name,role,avatar'])
+                          ->withCount([
+                              'interactions as views_count' => function ($q) {
+                                  $q->where('interaction_type', 'view');
+                              },
+                              'interactions as likes_count' => function ($q) {
+                                  $q->where('interaction_type', 'like');
+                              }
+                          ]);
+                }
+            ])
             ->latest()
             ->get();
     }
@@ -136,7 +145,6 @@ class PortfolioService
                     }
                 }
             }
-
             return $portfolio->fresh('media');
         });
     }

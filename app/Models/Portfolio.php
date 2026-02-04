@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\HasInteractions;
 use Illuminate\Database\Eloquent\Model;
 
 class Portfolio extends Model
 {
+    use HasInteractions;
     protected $guarded = [];
 
     protected $hidden = ['updated_at'];
@@ -21,5 +23,9 @@ class Portfolio extends Model
     public function bookmarks()
     {
         return $this->hasMany(BookmarkedPortfolio::class);
+    }
+    public function interactions()
+    {
+        return $this->morphMany(Interaction::class, 'target');
     }
 }

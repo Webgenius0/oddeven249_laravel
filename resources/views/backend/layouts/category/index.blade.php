@@ -33,6 +33,10 @@
                             </div>
                         </div>
                     </div>
+                    <form id="delete-form" action="" method="POST" style="display: none;">
+                        @csrf
+                        @method('DELETE')
+                    </form>
                 </div>
             </div>
         </div>
@@ -67,14 +71,16 @@
 @push('script')
     <script>
         $(document).ready(function() {
+            // AJAX এর জন্য CSRF টোকেন সেটআপ
             $.ajaxSetup({
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 }
             });
 
+            // ডাটাটেবিল ইনিশিয়ালাইজেশন
             if (!$.fn.DataTable.isDataTable('#data-table')) {
-                let dTable = $('#data-table').DataTable({
+                $('#data-table').DataTable({
                     order: [],
                     lengthMenu: [
                         [10, 25, 50, 100, -1],
@@ -125,33 +131,35 @@
             }
         });
 
-        // Status Change Confirm Alert
+        // Status Change Confirmation Alert
         function showStatusChangeAlert(id) {
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'You want to update the status?',
+                text: 'Do you want to change the status of this category?',
                 icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: 'Yes',
-                cancelButtonText: 'No',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, update it!',
+                cancelButtonText: 'No, cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
                     statusChange(id);
                 } else {
-                    // Reset checkbox if cancelled
-                    $('#data-table').DataTable().ajax.reload();
+                    // Reload table to reset the switch state if canceled
+                    $('#data-table').DataTable().ajax.reload(null, false);
                 }
             });
         }
 
-        // Status Change Ajax
+        // Ajax Function to Change Status
         function statusChange(id) {
             let url = '{{ route('admin.category.status', ':id') }}';
             $.ajax({
                 type: "GET",
                 url: url.replace(':id', id),
                 success: function(resp) {
-                    $('#data-table').DataTable().ajax.reload();
+                    $('#data-table').DataTable().ajax.reload(null, false);
                     if (resp.success === true) {
                         toastr.success(resp.message);
                     } else {
@@ -159,44 +167,31 @@
                     }
                 },
                 error: function() {
-                    toastr.error("Something went wrong");
+                    toastr.error("Something went wrong!");
                 }
             });
         }
 
-        // Delete Confirm Alert
-        function showDeleteConfirm(id) {
+        // Delete Category via Hidden Form Submission
+        function deleteCategory(id) {
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'If you delete this, it will be gone forever.',
+                text: "You won't be able to revert this!",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No, keep it'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    deleteItem(id);
-                }
-            });
-        }
+                    // Set action URL and submit hidden form
+                    let url = "{{ route('admin.category.destroy', ':id') }}";
+                    url = url.replace(':id', id);
 
-        // Delete Action
-        function deleteItem(id) {
-            let url = '{{ route('admin.category.destroy', ':id') }}';
-            $.ajax({
-                type: "DELETE",
-                url: url.replace(':id', id),
-                success: function(resp) {
-                    $('#data-table').DataTable().ajax.reload();
-                    if (resp['t-success']) {
-                        toastr.success(resp.message);
-                    } else {
-                        toastr.error(resp.message);
-                    }
-                },
-                error: function() {
-                    toastr.error("Delete failed!");
+                    let form = document.getElementById('delete-form');
+                    form.action = url;
+                    form.submit();
                 }
             });
         }
