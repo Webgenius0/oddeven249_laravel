@@ -69,4 +69,16 @@ class ContestRepository
     {
         return Contest::withCount('participants')->findOrFail($id);
     }
+
+    public function getParticipantsByContest($contestId, $role = null)
+    {
+        $contest = Contest::findOrFail($contestId);
+
+        $query = $contest->participants();
+        if ($role) {
+            $query->where('role', $role);
+        }
+
+        return $query->withPivot('payment_status', 'created_at')->get();
+    }
 }

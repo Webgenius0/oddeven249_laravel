@@ -193,4 +193,20 @@ class ContestService
             'collaborators'         => $contest->collaborators,
         ];
     }
+    public function getContestParticipantsData($contestId, $role = null)
+    {
+
+        $participants = $this->contestRepo->getParticipantsByContest($contestId, $role);
+        return $participants->map(function ($user) {
+            return [
+                'id'             => $user->id,
+                'name'           => $user->name,
+                'email'          => $user->email,
+                'role'           => $user->role,
+                'photo'          => $user->photo_url,
+                'payment_status' => $user->pivot->payment_status ?? 'N/A',
+                'joined_at'      => $user->pivot->created_at ? $user->pivot->created_at->format('Y-m-d H:i:s') : 'N/A',
+            ];
+        });
+    }
 }

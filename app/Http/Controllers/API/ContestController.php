@@ -190,5 +190,25 @@ class ContestController extends Controller
             return $this->error(null, $e->getMessage(), 400);
         }
     }
+    public function allParticipants(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'contest_id' => 'required|exists:contests,id',
+            'role'       => 'nullable|string',
+        ]);
 
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), $validator->errors()->first(), 422);
+        }
+
+        try {
+            $data = $this->contestService->getContestParticipantsData(
+                $request->contest_id,
+                $request->role
+            );
+            return $this->success($data, 'Participants list retrieved successfully!', 200);
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 500);
+        }
+    }
 }

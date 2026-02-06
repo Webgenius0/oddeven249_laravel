@@ -122,6 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/participated-contests', 'participatedContests');
         Route::post('/store', 'store');
         Route::post('/join-contest', 'join');
+        Route::get('/participants', 'allParticipants');
     });
 
     Route::prefix('interactions')->controller(InteractionController::class)->group(function () {

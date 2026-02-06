@@ -25,9 +25,10 @@ class Contest extends Model
                     ->withPivot('status')
                     ->withTimestamps();
     }
-
     public function participants()
     {
-        return $this->hasMany(ContestParticipant::class);
+        return $this->belongsToMany(User::class, 'contest_participants', 'contest_id', 'user_id')
+                    ->withPivot('payment_status')
+                    ->withTimestamps();
     }
 }
