@@ -14,11 +14,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class LoginController extends Controller
 {
-
     use ApiResponse;
 
     /**
@@ -143,7 +143,30 @@ class LoginController extends Controller
 
         return $this->error([], 'Invalid credentials', 401);
     }
+    public function guestLogin(Request $request)
+    {
+        try {
 
+            $uniqueId = substr(uniqid(), -4);
+            $guestName = "Guest_" . $uniqueId;
+            $guestEmail = "guest_" . uniqid() . "@yourdomain.com";
+
+            $user = User::create([
+                'name'     => $guestName,
+                'email'    => $guestEmail,
+                'password' => Hash::make(Str::random(16)),
+                'role'     => User::ROLE_GUEST,
+                'email_verified_at' => now(),
+            ]);
+            $token = $user->createToken('guest_token')->plainTextToken;
+            $user->setAttribute('token', $token);
+
+            return $this->success($user, 'Logged in as Guest successfully', 200);
+
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 500);
+        }
+    }
     /**
      * Verify Email to send otp
      *

@@ -22,9 +22,13 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role', 'parent_id', 'avatar',
-        'phone', 'phone_code', 'country', 'website_link', 'category_id'
+        'phone', 'phone_code', 'country', 'website_link', 'category_id','parent_id',
+         'manager_permissions','is_exclusive'
     ];
-
+    protected $casts = [
+        'manager_permissions' => 'array',
+        'is_exclusive'        => 'boolean'
+    ];
     protected $hidden = [
         'password', 'remember_token', 'created_at', 'updated_at',
     ];

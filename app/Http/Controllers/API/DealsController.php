@@ -26,7 +26,7 @@ class DealsController extends Controller
         $deals = $this->dealService->getUserDeals($user, $status);
 
         $transformedDeals = $deals->map(function ($deal) use ($user) {
-            $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
+            $myId = $user->parent_id ? $user->parent_id : $user->id;
             $partner = ($deal->buyer_id === $myId) ? $deal->seller : $deal->buyer;
 
             return [
@@ -58,7 +58,7 @@ class DealsController extends Controller
             'description'   => 'nullable|string',
             'valid_until'   => 'required|date|after:today',
             'duration'      => 'required|string',
-            'target_id'     => 'required|exists:users,id', 
+            'target_id'     => 'required|exists:users,id',
         ]);
 
         try {
@@ -79,7 +79,7 @@ class DealsController extends Controller
         if (!$deal) {
             return $this->error(null, 'Deal not found', 404);
         }
-        $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
+        $myId = $user->parent_id ? $user->parent_id : $user->id;
         if ($deal->buyer_id !== $myId && $deal->seller_id !== $myId) {
             return $this->error(null, 'Unauthorized access', 403);
         }
@@ -120,7 +120,7 @@ class DealsController extends Controller
             return $this->error(null, 'Deal not found', 404);
         }
 
-        $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
+        $myId = $user->parent_id ? $user->parent_id : $user->id;
         if ($deal->buyer_id !== $myId && $deal->seller_id !== $myId) {
             return $this->error(null, 'Unauthorized access', 403);
         }
