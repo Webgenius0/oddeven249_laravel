@@ -116,6 +116,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('managers')->controller(BusinessManagerController::class)->group(function () {
         Route::get('/get-available-user-by-role', 'getAvailableUsers');
+        Route::get('/my-agencies', 'getMyAgencies');
+        Route::get('/my-managers', 'getMyManagers');
         Route::post('/store', 'storeManager');
         Route::post('/store-agency', 'storeAgency');
     });

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Repositories\UserRepository;
-use Illuminate\Support\Facades\Hash;
 use Exception;
 
 class UserService
@@ -14,15 +13,14 @@ class UserService
     {
         $this->userRepo = $userRepo;
     }
+
     public function assignExistingManager(array $data)
     {
         try {
-            $user = $this->userRepo->findById($data['user_id']);
-            if (!$user || $user->role !== 'business_manager') {
-                throw new Exception("The selected user is not a valid Business Manager!");
-            }
-            if ($user->parent_id !== null && $user->parent_id != auth()->id()) {
-                throw new Exception("This manager is already assigned to another user.");
+            $manager = $this->userRepo->findById($data['user_id']);
+
+            if (!$manager || !in_array($manager->role, ['business_manager'])) {
+                throw new Exception("The selected user is not a valid Business Manager or Agency!");
             }
 
             $inputPermissions = $data['permissions'] ?? [];
@@ -35,28 +33,21 @@ class UserService
                 'view_earning'        => filter_var($inputPermissions['view_earning'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
 
-            $updateData = [
-                'parent_id'           => auth()->id(),
-                'country'             => $data['country'] ?? $user->country,
-                'manager_permissions' => $permissions,
-            ];
-
-            return $this->userRepo->updateManager($user->id, $updateData);
+            // Many-to-Many logic: current user (influencer) assigning a manager
+            return $this->userRepo->assignToUser(auth()->id(), $manager->id, $permissions);
 
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
+
     public function assignAgency(array $data)
     {
         try {
-            $user = $this->userRepo->findById($data['user_id']);
+            $agency = $this->userRepo->findById($data['user_id']);
 
-            if (!$user || $user->role !== 'agency') {
+            if (!$agency || $agency->role !== 'agency') {
                 throw new Exception("The selected user is not a valid Agency!");
-            }
-            if ($user->parent_id !== null && $user->parent_id != auth()->id()) {
-                throw new Exception("This agency is already assigned to another user.");
             }
 
             $permissions = [
@@ -67,18 +58,34 @@ class UserService
                 'create_event_permission' => filter_var($data['permissions']['event'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
 
-            return $this->userRepo->updateManager($user->id, [
-                'parent_id'           => auth()->id(),
-                'is_exclusive'        => filter_var($data['exclusive'] ?? false, FILTER_VALIDATE_BOOLEAN),
-                'manager_permissions'  => $permissions,
-            ]);
+            return $this->userRepo->assignToUser(auth()->id(), $agency->id, $permissions);
 
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
+
     public function getAvailableListByRole($role)
     {
         return $this->userRepo->getAvailableUsersByRole($role);
+    }
+    // UserService.php
+
+    public function getMyAssignedTeamByRole($user, $role)
+    {
+        return $user->agencies()
+            ->where('role', $role)
+            ->select('users.id', 'users.name', 'users.email', 'users.avatar')
+            ->get()
+            ->map(function ($member) {
+                // পিভট টেবিল থেকে পারমিশন ডিকোড করা
+                $member->permissions = $member->pivot->permissions
+                    ? json_decode($member->pivot->permissions, true)
+                    : null;
+
+                // ক্লিন আউটপুটের জন্য পিভট অবজেক্টটি সরিয়ে ফেলা
+                unset($member->pivot);
+                return $member;
+            });
     }
 }

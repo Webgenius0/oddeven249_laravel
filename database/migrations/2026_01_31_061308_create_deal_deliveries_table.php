@@ -16,6 +16,7 @@ return new class () extends Migration {
             $table->foreignId('sender_id')->constrained('users');
             $table->text('message');
             $table->string('attachment')->nullable();
+            $table->foreignId('submitted_by')->nullable()->constrained('users')->onDelete('set null');
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->timestamps();
         });

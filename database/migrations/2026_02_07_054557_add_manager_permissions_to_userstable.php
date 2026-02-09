@@ -8,7 +8,6 @@ return new class () extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->json('manager_permissions')->after('role')->nullable();
             $table->boolean('is_exclusive')->nullable()->default(0);
         });
     }

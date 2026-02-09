@@ -4,41 +4,46 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CheckManagerPermission
 {
-    /**
-     * Handle an incoming request.
-     * * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @param  string  ...$permissions
-     */
     public function handle(Request $request, Closure $next, ...$permissions)
     {
         $user = $request->user();
-
-        // 1. user login check
         if (!$user) {
             return response()->json(['status' => false, 'message' => 'Unauthenticated'], 401);
         }
 
-        // 2. full access if boss
-        if ($user->parent_id === null) {
+   
+        $influencerId = $request->header('X-Influencer-Id') ?: $request->input('influencer_id');
+
+        if (!$influencerId || $user->id == $influencerId) {
             return $next($request);
         }
+        $assignment = DB::table('business_manager_assignments')
+            ->where('user_id', $influencerId)  
+            ->where('manager_id', $user->id)   
+            ->first();
 
-        // 3. Manager permission data
-        $userManagerPermissions = $user->manager_permissions ?? [];
+        if (!$assignment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized: You are not assigned to this influencer.'
+            ], 403);
+        }
 
-        // 4. If any permission valid then true
+        $assignedPermissions = json_decode($assignment->permissions, true) ?: [];
+
         foreach ($permissions as $p) {
-            if (isset($userManagerPermissions[$p]) && ($userManagerPermissions[$p] === true || $userManagerPermissions[$p] === 1)) {
+            if (isset($assignedPermissions[$p]) && ($assignedPermissions[$p] === true || $assignedPermissions[$p] === 1)) {
                 return $next($request);
             }
         }
+
         return response()->json([
             'status' => false,
-            'message' => 'You do not have permission to perform this action. Required: ' . implode(' or ', $permissions)
+            'message' => 'Permission denied. Required: ' . implode(' or ', $permissions)
         ], 403);
     }
 }
