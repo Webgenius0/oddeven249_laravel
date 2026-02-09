@@ -29,6 +29,6 @@ class EventCollaborator extends Model
 
     public function collaborator()
     {
-        return $this->belongsTo(User::class, 'collaborator_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

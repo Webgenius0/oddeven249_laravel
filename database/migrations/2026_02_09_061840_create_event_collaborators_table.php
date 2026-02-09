@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('event_collaborators', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
-            $table->foreignId('collaborator_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('status', ['invited', 'accepted', 'declined'])->default('invited')->comment('invited / accepted / declined');
             $table->timestamps();
         });
