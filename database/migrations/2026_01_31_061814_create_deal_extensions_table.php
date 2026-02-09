@@ -5,7 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class () extends Migration {
-
     public function up()
     {
         Schema::create('deal_extensions', function (Blueprint $table) {
@@ -15,6 +14,7 @@ return new class () extends Migration {
             $table->text('message');
             $table->date('new_date');
             $table->time('new_time');
+            $table->foreignId('on_behalf_of')->nullable()->constrained('users')->onDelete('cascade');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
         });

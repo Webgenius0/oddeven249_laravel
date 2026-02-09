@@ -17,4 +17,9 @@ class DealExtension extends Model
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
+
+    public function onBehalfOf()
+    {
+        return $this->belongsTo(User::class, 'on_behalf_of');
+    }
 }

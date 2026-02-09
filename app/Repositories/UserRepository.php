@@ -8,10 +8,11 @@ class UserRepository
 {
     public function getAvailableUsersByRole($role)
     {
+        // যেহেতু একজন ম্যানেজার এখন মাল্টিপল ইনফ্লুয়েন্সারের সাথে কাজ করতে পারে,
+        // তাই whereNull('parent_id') আর প্রয়োজন নেই।
         return User::where('role', $role)
-                   ->whereNull('parent_id')
-                   ->select('id', 'name', 'email', 'phone', 'avatar', 'country')
-                   ->get();
+                    ->select('id', 'name', 'email', 'role', 'phone', 'avatar', 'country')
+                    ->get();
     }
 
     public function findById($id)
@@ -19,11 +20,16 @@ class UserRepository
         return User::findOrFail($id);
     }
 
-    public function updateManager($id, array $data)
+    public function assignToUser($influencerId, $managerId, array $permissions)
     {
-        $user = User::findOrFail($id);
-        $user->update($data);
-        return $user;
-    }
+        $influencer = User::findOrFail($influencerId);
 
+        // syncWithoutDetaching ব্যবহার করলে আগের এসাইনমেন্ট ডিলিট হবে না,
+        // শুধু নতুনটা অ্যাড হবে বা আপডেট হবে।
+        $influencer->agencies()->syncWithoutDetaching([
+            $managerId => ['permissions' => json_encode($permissions)]
+        ]);
+
+        return User::find($managerId);
+    }
 }

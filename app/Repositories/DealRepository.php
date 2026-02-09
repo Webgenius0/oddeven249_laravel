@@ -11,17 +11,14 @@ class DealRepository
         return Deal::create($data);
     }
 
-    /**
-     * ইউজারের সকল ডিল (বায়ার অথবা সেলার হিসেবে) খুঁজে বের করা
-     */
+
     public function getAllForUser($userId, $status = null)
     {
-        // $role প্যারামিটারটি আর দরকার নেই, কারণ আমরা দুই কলামেই চেক করব
         $query = Deal::where(function ($q) use ($userId) {
             $q->where('buyer_id', $userId)
               ->orWhere('seller_id', $userId);
         })
-        ->with(['buyer', 'seller']); // রিলেশন নাম আপডেট করা হয়েছে
+        ->with(['buyer', 'seller']); 
 
         if ($status) {
             $query->where('status', $status);
