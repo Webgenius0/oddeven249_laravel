@@ -73,8 +73,7 @@ class User extends Authenticatable
     {
         return $this->role === self::ROLE_INFLUENCER;
     }
-
- 
+    
     public function dealsAsSeller()
     {
         return $this->hasMany(Deal::class, 'seller_id');

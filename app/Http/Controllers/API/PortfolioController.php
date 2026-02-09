@@ -48,7 +48,6 @@ class PortfolioController extends Controller
             return $this->error(null, $e->getMessage(), 500);
         }
     }
-
     public function toggleBookmark(Request $request)
     {
         $request->validate([
