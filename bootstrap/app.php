@@ -12,21 +12,27 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         then: function () {
+
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/mizan_api.php'));
+
             Route::middleware(['web', 'auth', 'verified']) // Apply middleware
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
+
             Route::middleware(['web'])
-            ->group(base_path('routes/frontend.php'));
+                ->group(base_path('routes/frontend.php'));
         }
     )
-      ->withMiddleware(function (Middleware $middleware) {
-          // Register middleware alias
-          $middleware->alias([
-              'role' => \App\Http\Middleware\CheckRole::class,
-              'check_permission' => \App\Http\Middleware\CheckManagerPermission::class,
-          ]);
-      })
+    ->withMiddleware(function (Middleware $middleware) {
+        // Register middleware alias
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+            'check_permission' => \App\Http\Middleware\CheckManagerPermission::class,
+        ]);
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })
