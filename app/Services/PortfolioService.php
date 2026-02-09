@@ -16,26 +16,36 @@ class PortfolioService
 
     public function storePortfolio($user, array $data)
     {
+        
+        $targetUserId = $user->id;
+
+        if (!empty($data['user_id']) && ($user->isAgency() || $user->isBusinessManager())) {
+            $targetUserId = (int) $data['user_id'];
+
+            if (!$user->clients()->where('user_id', $targetUserId)->exists()) {
+                throw new \Exception("Unauthorized: You are not the manager of this influencer.");
+            }
+        }
+
         $portfolioData = [
-            'user_id'     => $user->id,
+            'user_id'     => $targetUserId,
             'title'       => $data['title'],
             'description' => $data['description'] ?? null,
         ];
 
         $portfolio = $this->portfolioRepo->create($portfolioData);
+
+        // মিডিয়া আপলোড আগের মতোই থাকবে...
         if (isset($data['media']) && is_array($data['media'])) {
             foreach ($data['media'] as $item) {
                 if (isset($item['file'])) {
                     $path = uploadImage($item['file'], 'portfolios');
-
                     if ($path) {
-                        $mediaData = [
+                        $this->portfolioRepo->addMedia($portfolio->id, [
                             'media_url'  => $path,
                             'media_type' => $item['media_type'],
                             'title'      => $item['title'] ?? null,
-                        ];
-
-                        $this->portfolioRepo->addMedia($portfolio->id, $mediaData);
+                        ]);
                     }
                 }
             }

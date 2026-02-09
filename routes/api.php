@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/store', 'store');
         Route::post('/toggle-bookmark', 'toggleBookmark');
         Route::get('/my-bookmarks', 'myBookmarks');
+        Route::get('/my-clients', 'myClient');
     });
 
     Route::prefix('contest')->controller(ContestController::class)->group(function () {

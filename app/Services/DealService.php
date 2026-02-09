@@ -25,8 +25,8 @@ class DealService
 
     public function storeDeal($user, array $data, $effectiveId = null)
     {
-        $buyerId = $this->resolveId($user, $effectiveId);
-        $targetId = $data['target_id'];
+        $buyerId = ( int) $this->resolveId($user, $effectiveId);
+        $targetId = ( int) $data['target_id'];
 
         if ($buyerId == $targetId) {
             throw new \Exception("You cannot create a deal with yourself!");
@@ -110,8 +110,8 @@ class DealService
         return DB::transaction(function () use ($deal, $myId, $user, $data, $attachmentPath) {
             $delivery = \App\Models\DealDelivery::create([
                 'deal_id'      => $deal->id,
-                'sender_id'    => $myId,       
-                'submitted_by' => $user->id,     
+                'sender_id'    => $myId,
+                'submitted_by' => $user->id,
                 'message'      => $data['delivery_message'],
                 'attachment'   => $attachmentPath,
             ]);
