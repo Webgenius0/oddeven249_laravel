@@ -1,0 +1,22 @@
+name: Deploy Private GitHub repository to servers
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-softvence:
+    name: Deploy to Softvence Server
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.1.0
+        with:
+          fetch-depth: 2
+      - name: FTP Deploy to Softvence
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ftp.thewarriors.team
+          username: thewarriors@oddeven.thewarriors.team
+          password: "oddeven@2026"

@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\BusinessManagerController;
+use App\Http\Controllers\Api\ContestController;
 use App\Http\Controllers\Api\DealsController;
+use App\Http\Controllers\Api\InteractionController;
 use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
@@ -38,7 +41,7 @@ Route::controller(LoginController::class)->prefix('users/login')->group(function
 
     // User Login
     Route::post('/', 'userLogin');
-
+    Route::post('/guest-login', 'guestLogin');
     // Verify Email
     Route::post('/email-verify', 'emailVerify');
 
@@ -68,19 +71,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/delete-account', 'deleteAccount');
         Route::post('/logout', 'logoutUser');
     });
-    Route::prefix('deals')->controller(DealsController::class)->group(function () {
-        Route::get('/', 'index');
-        Route::post('/store', 'store');
-        Route::post('/update-status', 'updateStatus');
-        Route::get('/show', 'show');
+
+    Route::prefix('deals')->controller(DealsController::class)->middleware(['auth:sanctum', 'role:influencer,advertiser,business_manager,agency'])->group(function () {
+        Route::get('/', 'index')
+        ->middleware(['role:influencer,advertiser,business_manager,agency', 'check_permission:view_deal,deal_manage_permission']);
+        Route::post('/store', 'store')->middleware('role:influencer,advertiser,agency', 'check_permission:deal_manage_permission');
+        Route::post('/update-status', 'updateStatus')
+         ->middleware(['role:influencer,advertiser,business_manager,agency', 'check_permission:deal_manage_permission']);
+        Route::get('/show', 'show')->middleware('check_permission:view_deal,deal_manage_permission');
         Route::post('/rate-deal', 'rateDeal');
         Route::get('/rating-details', 'getRatingDetails');
         Route::post('/submit-delivery', 'submitDelivery');
         Route::post('/request-extension', 'requestExtension');
-        Route::post('/process-delivery', 'processDeliveryAction');
+        Route::post('/process-delivery', 'processDeliveryAction')
+         ->middleware(['role:influencer,advertiser,business_manager,agency', 'check_permission:accept_reject_deals']);
         Route::post('/process-extension', 'processExtensionAction');
         Route::get('/extension-history', 'getAllExtensionRequests');
     });
+
     Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
         Route::get('/', 'index');
         Route::get('/show', 'show');
@@ -89,5 +97,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/store', 'store');
         Route::post('/toggle-bookmark', 'toggleBookmark');
         Route::get('/my-bookmarks', 'myBookmarks');
+    });
+
+    Route::prefix('contest')->controller(ContestController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/show', 'show');
+        Route::get('/contest-details', 'contestDetails');
+        Route::post('/update', 'update');
+        Route::get('/my-contests', 'myContests');
+        Route::get('/participated-contests', 'participatedContests');
+        Route::post('/store', 'store');
+        Route::post('/join-contest', 'join');
+        Route::post('/announce-winner', 'announceWinner');
+        Route::get('/participants', 'allParticipants');
+    });
+
+    Route::prefix('interactions')->controller(InteractionController::class)->group(function () {
+        Route::post('/store', 'handle');
+    });
+    Route::prefix('managers')->controller(BusinessManagerController::class)->group(function () {
+        Route::get('/get-available-user-by-role', 'getAvailableUsers');
+        Route::post('/store', 'storeManager');
+        Route::post('/store-agency', 'storeAgency');
     });
 });

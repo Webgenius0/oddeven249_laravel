@@ -20,23 +20,21 @@ class DealService
 
     public function storeDeal($user, array $data)
     {
-        $buyerId = $user->isBusinessManager() ? $user->parent_id : $user->id;
+        $buyerId = $user->parent_id ? $user->parent_id : $user->id;
         $targetId = $data['target_id'];
 
         if ($buyerId == $targetId) {
             throw new Exception("You cannot create a deal with yourself!");
         }
-
-
         $dealData = [
             'campaign_name' => $data['campaign_name'],
             'amount'        => $data['amount'],
             'description'   => $data['description'] ?? null,
             'duration'      => $data['duration'],
             'valid_until'   => Carbon::parse($data['valid_until'])->format('Y-m-d H:i:s'),
-            'buyer_id'      => $buyerId,  
-            'seller_id'     => $targetId, 
-            'requested_by'  => $user->id, 
+            'buyer_id'      => $buyerId,
+            'seller_id'     => $targetId,
+            'requested_by'  => $user->id,
             'status'        => 'pending',
         ];
 
@@ -45,7 +43,8 @@ class DealService
 
     public function getUserDeals($user, $status = null)
     {
-        $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
+
+        $myId = $user->parent_id ? $user->parent_id : $user->id;
         return $this->dealRepository->getAllForUser($myId, $status);
     }
 
@@ -83,6 +82,16 @@ class DealService
         return $this->dealRepository->updateOrCreateRating($data);
     }
 
+    public function getRatingByDealId($dealId, $userId)
+    {
+        return \App\Models\DealRating::where('deal_id', $dealId)
+            ->where(function ($query) use ($userId) {
+                $query->where('rated_by', $userId)
+                      ->orWhere('rated_to', $userId);
+            })
+            ->with(['deal', 'ratedBy'])
+            ->first();
+    }
 
     public function handleDeliverySubmission($user, $data)
     {

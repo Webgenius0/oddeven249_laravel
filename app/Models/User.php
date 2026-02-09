@@ -22,9 +22,13 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role', 'parent_id', 'avatar',
-        'phone', 'phone_code', 'country', 'website_link', 'category_id'
+        'phone', 'phone_code', 'country', 'website_link', 'category_id','parent_id',
+         'manager_permissions','is_exclusive'
     ];
-
+    protected $casts = [
+        'manager_permissions' => 'array',
+        'is_exclusive'        => 'boolean'
+    ];
     protected $hidden = [
         'password', 'remember_token', 'created_at', 'updated_at',
     ];
@@ -63,5 +67,26 @@ class User extends Authenticatable
     public function subordinates()
     {
         return $this->hasMany(User::class, 'parent_id');
+    }
+    public function createdContests()
+    {
+        return $this->hasMany(Contest::class, 'creator_id');
+    }
+
+    public function sponsoredContests()
+    {
+        return $this->hasMany(Sponsorship::class, 'sponsor_id');
+    }
+
+    public function collaborationContests()
+    {
+        return $this->belongsToMany(Contest::class, 'contest_collaborators')
+                    ->withPivot('status')
+                    ->withTimestamps();
+    }
+
+    public function participatedContests()
+    {
+        return $this->hasMany(ContestParticipant::class);
     }
 }

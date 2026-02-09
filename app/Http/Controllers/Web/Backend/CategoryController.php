@@ -35,16 +35,16 @@ class CategoryController extends Controller
                                    name="status" ' . $checked . '>
                         </div>';
                 })
-                ->addColumn('action', function ($data) {
-                    return '<div class="btn-group btn-group-sm" role="group">
-                              <a href="' . route('admin.category.edit', $data->id) . '" class="text-white btn btn-primary" title="Edit">
-                                <i class="fa fa-pencil"></i>
-                              </a>
-                              <a href="#" onclick="showDeleteConfirm(' . $data->id . ')" class="text-white btn btn-danger" title="Delete">
-                                <i class="fa fa-trash-o"></i>
-                              </a>
-                            </div>';
-                })
+               ->addColumn('action', function ($data) {
+                   return '<div class="btn-group btn-group-sm" role="group">
+              <a href="' . route('admin.category.edit', $data->id) . '" class="text-white btn btn-primary" title="Edit">
+                <i class="fa fa-pencil"></i>
+              </a>
+              <button type="button" onclick="deleteCategory(' . $data->id . ')" class="text-white btn btn-danger" title="Delete">
+                <i class="fa fa-trash-o"></i>
+              </button>
+            </div>';
+               })
                 ->rawColumns(['status', 'action'])
                 ->make(true);
         }
@@ -89,7 +89,7 @@ class CategoryController extends Controller
             return redirect()->route('admin.category.index')->with('t-error', 'Category not found!');
         }
     }
- 
+
     public function update(Request $request, int $id): RedirectResponse
     {
         $validator = Validator::make($request->all(), [
@@ -120,12 +120,13 @@ class CategoryController extends Controller
             'data'    => $data,
         ]);
     }
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id): RedirectResponse
     {
-        Category::findOrFail($id)->delete();
-        return response()->json([
-            't-success' => true,
-            'message'   => 'Deleted successfully.',
-        ]);
+        try {
+            Category::findOrFail($id)->delete();
+            return redirect()->back()->with('t-success', 'Category deleted successfully.');
+        } catch (Exception $e) {
+            return redirect()->back()->with('t-error', 'Something went wrong!');
+        }
     }
 }

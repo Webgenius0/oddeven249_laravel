@@ -46,12 +46,28 @@ class PortfolioRepository
     {
         return \App\Models\Portfolio::where('user_id', $userId)
             ->with('media')
+            ->withCount([
+                    'interactions as views_count' => function ($query) {
+                        $query->where('interaction_type', 'view');
+                    },
+                    'interactions as likes_count' => function ($query) {
+                        $query->where('interaction_type', 'like');
+                    }
+                ])
             ->latest()
             ->get();
     }
     public function getAllWithFilters($role = null, $excludeUserId = null)
     {
-        $query = \App\Models\Portfolio::with(['media', 'user:id,name,role']);
+        $query = \App\Models\Portfolio::with(['media', 'user:id,name,role'])
+                ->withCount([
+                'interactions as views_count' => function ($query) {
+                    $query->where('interaction_type', 'view');
+                },
+                'interactions as likes_count' => function ($query) {
+                    $query->where('interaction_type', 'like');
+                }
+            ]);
         if ($excludeUserId) {
             $query->where('user_id', '!=', $excludeUserId);
         }
@@ -65,7 +81,15 @@ class PortfolioRepository
     }
     public function getByIdWithMedia($id)
     {
-        return \App\Models\Portfolio::with('media')->find($id);
+        return \App\Models\Portfolio::with('media')
+                 ->withCount([
+                'interactions as views_count' => function ($query) {
+                    $query->where('interaction_type', 'view');
+                },
+                'interactions as likes_count' => function ($query) {
+                    $query->where('interaction_type', 'like');
+                }
+            ])->find($id);
     }
     // update part
     public function getById($id)
