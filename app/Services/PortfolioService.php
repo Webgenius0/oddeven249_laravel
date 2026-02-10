@@ -16,6 +16,7 @@ class PortfolioService
 
     public function storePortfolio($user, array $data)
     {
+        dd($user->id);
         $portfolioData = [
             'user_id'     => $user->id,
             'title'       => $data['title'],
@@ -62,14 +63,14 @@ class PortfolioService
             ->with([
                 'portfolio' => function ($query) {
                     $query->with(['media', 'user:id,name,role,avatar'])
-                          ->withCount([
-                              'interactions as views_count' => function ($q) {
-                                  $q->where('interaction_type', 'view');
-                              },
-                              'interactions as likes_count' => function ($q) {
-                                  $q->where('interaction_type', 'like');
-                              }
-                          ]);
+                        ->withCount([
+                            'interactions as views_count' => function ($q) {
+                                $q->where('interaction_type', 'view');
+                            },
+                            'interactions as likes_count' => function ($q) {
+                                $q->where('interaction_type', 'like');
+                            }
+                        ]);
                 }
             ])
             ->latest()
