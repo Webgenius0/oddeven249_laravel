@@ -21,27 +21,59 @@ class User extends Authenticatable
     public const ROLE_GUEST = 'guest';
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'parent_id', 'avatar',
-        'phone', 'phone_code', 'country', 'website_link', 'category_id'
+        'name',
+        'email',
+        'password',
+        'role',
+        'avatar',
+        'phone',
+        'phone_code',
+        'country',
+        'website_link',
+        'category_id',
+        'is_exclusive'
+    ];
+
+    protected $casts = [
+        'is_exclusive' => 'boolean'
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'created_at', 'updated_at',
+        'password',
+        'remember_token',
+        'created_at',
+        'updated_at',
     ];
+
+
+    public function agencies()
+    {
+        return $this->belongsToMany(User::class, 'business_manager_assignments', 'user_id', 'manager_id')
+                    ->withPivot('permissions')
+                    ->withTimestamps();
+    }
+    public function clients()
+    {
+        return $this->belongsToMany(User::class, 'business_manager_assignments', 'manager_id', 'user_id')
+                    ->withPivot('permissions')
+                    ->withTimestamps();
+    }
 
     public function isBusinessManager()
     {
         return $this->role === self::ROLE_BUSINESS_MANAGER;
     }
 
-    public function parent()
+    public function isAgency()
     {
-        return $this->belongsTo(User::class, 'parent_id');
+        return $this->role === self::ROLE_AGENCY;
     }
-    public function managers()
+
+    public function isInfluencer()
     {
-        return $this->hasMany(User::class, 'parent_id');
+        return $this->role === self::ROLE_INFLUENCER;
     }
+    
     public function dealsAsSeller()
     {
         return $this->hasMany(Deal::class, 'seller_id');
@@ -56,14 +88,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Deal::class, 'requested_by');
     }
-    public function manager()
-    {
-        return $this->belongsTo(User::class, 'parent_id');
-    }
-    public function subordinates()
-    {
-        return $this->hasMany(User::class, 'parent_id');
-    }
+
     public function createdContests()
     {
         return $this->hasMany(Contest::class, 'creator_id');

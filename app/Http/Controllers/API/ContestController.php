@@ -200,7 +200,6 @@ class ContestController extends Controller
         if ($validator->fails()) {
             return $this->error($validator->errors(), $validator->errors()->first(), 422);
         }
-
         try {
             $data = $this->contestService->getContestParticipantsData(
                 $request->contest_id,
@@ -209,6 +208,28 @@ class ContestController extends Controller
             return $this->success($data, 'Participants list retrieved successfully!', 200);
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
+        }
+    }
+    public function announceWinner(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'contest_id' => 'required|exists:contests,id',
+            'winner_id'  => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error($validator->errors(), $validator->errors()->first(), 422);
+        }
+
+        try {
+            $contest = $this->contestService->announceWinner(
+                $request->contest_id,
+                $request->winner_id
+            );
+
+            return $this->success($contest, 'Winner announced and contest completed successfully!');
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 400);
         }
     }
 }

@@ -81,4 +81,14 @@ class ContestRepository
 
         return $query->withPivot('payment_status', 'created_at')->get();
     }
+    public function setWinner($contestId, $winnerId)
+    {
+        $contest = Contest::findOrFail($contestId);
+        $contest->update([
+            'winner_id' => $winnerId,
+            'status'    => 'completed'
+        ]);
+
+        return $contest->load('creator');
+    }
 }

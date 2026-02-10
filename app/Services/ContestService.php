@@ -209,4 +209,21 @@ class ContestService
             ];
         });
     }
+    public function announceWinner($contestId, $winnerId)
+    {
+        $contest = $this->contestRepo->findById($contestId);
+        if ($contest->creator_id !== auth()->id()) {
+            throw new Exception("You are not authorized to announce a winner for this contest.");
+        }
+
+        $isParticipant = $this->contestRepo->isUserJoined($contestId, $winnerId);
+        if (!$isParticipant) {
+            throw new Exception("The selected user is not a participant of this contest.");
+        }
+
+        if ($contest->status === 'completed') {
+            throw new Exception("A winner has already been announced for this contest.");
+        }
+        return $this->contestRepo->setWinner($contestId, $winnerId);
+    }
 }

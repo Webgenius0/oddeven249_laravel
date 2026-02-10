@@ -5,20 +5,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class () extends Migration {
-    public function up()
+    public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-
-            $table->unsignedBigInteger('parent_id')->nullable()->after('role');
-            $table->foreign('parent_id')->references('id')->on('users')->onDelete('set null');
+            $table->boolean('is_exclusive')->nullable()->default(0);
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['category_id']);
-            $table->dropColumn(['website_link', 'category_id']);
+            //
         });
     }
 };

@@ -19,15 +19,31 @@ class DealsController extends Controller
         $this->dealService = $dealService;
     }
 
+    /**
+     * এটি চেক করবে ইউজার নিজে কাজ করছে নাকি কারো হয়ে (Proxy) কাজ করছে।
+     */
+    private function getEffectiveUserId(Request $request)
+    {
+        $user = Auth::user();
+        $influencerId = $request->header('X-Influencer-Id') ?: $request->input('influencer_id');
+
+        // যদি ইউজার ম্যানেজার বা এজেন্সি হয় এবং ইনফ্লুয়েন্সার আইডি পাঠানো হয়
+        if (in_array($user->role, ['business_manager', 'agency']) && $influencerId) {
+            return $influencerId;
+        }
+
+        return $user->id;
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
-        $status = $request->query('status');
-        $deals = $this->dealService->getUserDeals($user, $status);
+        $effectiveId = $this->getEffectiveUserId($request);
 
-        $transformedDeals = $deals->map(function ($deal) use ($user) {
-            $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
-            $partner = ($deal->buyer_id === $myId) ? $deal->seller : $deal->buyer;
+        $deals = $this->dealService->getUserDeals($user, $request->query('status'), $effectiveId);
+
+        $transformedDeals = $deals->map(function ($deal) use ($effectiveId) {
+            $partner = ($deal->buyer_id == $effectiveId) ? $deal->seller : $deal->buyer;
 
             return [
                 'id'            => $deal->id,
@@ -47,10 +63,10 @@ class DealsController extends Controller
         return $this->success($transformedDeals, 'Deals retrieved successfully');
     }
 
-
     public function store(Request $request)
     {
         $user = Auth::user();
+        $effectiveId = $this->getEffectiveUserId($request);
 
         $validated = $request->validate([
             'campaign_name' => 'required|string|max:255',
@@ -58,11 +74,11 @@ class DealsController extends Controller
             'description'   => 'nullable|string',
             'valid_until'   => 'required|date|after:today',
             'duration'      => 'required|string',
-            'target_id'     => 'required|exists:users,id', 
+            'target_id'     => 'required|exists:users,id',
         ]);
 
         try {
-            $deal = $this->dealService->storeDeal($user, $validated);
+            $deal = $this->dealService->storeDeal($user, $validated, $effectiveId);
             return $this->success($deal, 'Deal request sent successfully!', 200);
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 422);
@@ -72,21 +88,20 @@ class DealsController extends Controller
     public function show(Request $request)
     {
         $request->validate(['id' => 'required|exists:deals,id']);
+        $effectiveId = $this->getEffectiveUserId($request);
 
-        $user = Auth::user();
         $deal = $this->dealService->getDealById($request->id);
 
         if (!$deal) {
             return $this->error(null, 'Deal not found', 404);
         }
-        $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
-        if ($deal->buyer_id !== $myId && $deal->seller_id !== $myId) {
+        if ($deal->buyer_id != $effectiveId && $deal->seller_id != $effectiveId) {
             return $this->error(null, 'Unauthorized access', 403);
         }
 
-        $partner = ($deal->buyer_id === $myId) ? $deal->seller : $deal->buyer;
+        $partner = ($deal->buyer_id == $effectiveId) ? $deal->seller : $deal->buyer;
 
-        $details = [
+        return $this->success([
             'id'            => $deal->id,
             'campaign_name' => $deal->campaign_name,
             'description'   => $deal->description,
@@ -101,9 +116,7 @@ class DealsController extends Controller
                 'role'  => $partner->role ?? 'N/A',
                 'email' => $partner->email ?? 'N/A',
             ],
-        ];
-
-        return $this->success($details, 'Deal details retrieved successfully');
+        ], 'Deal details retrieved successfully');
     }
 
     public function updateStatus(Request $request)
@@ -114,17 +127,13 @@ class DealsController extends Controller
         ]);
 
         $user = Auth::user();
+        $effectiveId = $this->getEffectiveUserId($request);
         $deal = $this->dealService->getDealById($request->id);
 
-        if (!$deal) {
-            return $this->error(null, 'Deal not found', 404);
-        }
-
-        $myId = $user->isBusinessManager() ? $user->parent_id : $user->id;
-        if ($deal->buyer_id !== $myId && $deal->seller_id !== $myId) {
+        if (!$deal || ($deal->buyer_id != $effectiveId && $deal->seller_id != $effectiveId)) {
             return $this->error(null, 'Unauthorized access', 403);
         }
-        if ($request->status === 'active' && $deal->requested_by === $user->id) {
+        if ($request->status === 'active' && $deal->requested_by == $effectiveId) {
             return $this->error(null, 'You cannot accept your own deal request', 403);
         }
 
@@ -181,6 +190,8 @@ class DealsController extends Controller
     }
     public function submitDelivery(Request $request)
     {
+        $effectiveId = $this->getEffectiveUserId($request);
+
         $validated = $request->validate([
             'deal_id'          => 'required|exists:deals,id',
             'delivery_message' => 'required|string',
@@ -188,7 +199,10 @@ class DealsController extends Controller
         ]);
 
         try {
-            $delivery = $this->dealService->handleDeliverySubmission(Auth::user(), $validated);
+            $delivery = $this->dealService->handleDeliverySubmission(Auth::user(), $validated, $effectiveId);
+
+            $delivery->load(['deal:id,buyer_id,seller_id,campaign_name']);
+
             return $this->success($delivery, 'Delivery submitted successfully', 200);
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), $e->getCode() ?: 422);
@@ -196,6 +210,8 @@ class DealsController extends Controller
     }
     public function requestExtension(Request $request)
     {
+        $effectiveId = $this->getEffectiveUserId($request);
+
         $validated = $request->validate([
             'deal_id'           => 'required|exists:deals,id',
             'extension_message' => 'required|string',
@@ -204,13 +220,16 @@ class DealsController extends Controller
         ]);
 
         try {
-            $extension = $this->dealService->handleExtensionRequest(Auth::user(), $validated);
+            $extension = $this->dealService->handleExtensionRequest(Auth::user(), $validated, $effectiveId);
+
+            $extension->load('deal:id,campaign_name,buyer_id,seller_id');
+
             return $this->success($extension, 'Extension request sent successfully', 200);
         } catch (\Exception $e) {
-            return $this->error(null, $e->getMessage(), $e->getCode() ?: 422);
+            $code = is_int($e->getCode()) && $e->getCode() >= 100 && $e->getCode() < 600 ? $e->getCode() : 422;
+            return $this->error(null, $e->getMessage(), $code);
         }
     }
-
     public function processDeliveryAction(Request $request)
     {
         $validated = $request->validate([
@@ -249,10 +268,13 @@ class DealsController extends Controller
         }
     }
 
-    public function getAllExtensionRequests()
+    public function getAllExtensionRequests(Request $request)
     {
+        $effectiveId = $this->getEffectiveUserId($request);
+
         try {
-            $extensions = $this->dealService->getAllExtensionsForUser(Auth::user());
+            $extensions = $this->dealService->getAllExtensionsForUser(Auth::user(), $effectiveId);
+
             return $this->success($extensions, 'All extension requests retrieved successfully');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);

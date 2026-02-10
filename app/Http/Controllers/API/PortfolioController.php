@@ -32,6 +32,7 @@ class PortfolioController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'user_id'             => 'nullable|exists:users,id',
             'title'               => 'required|string|max:255',
             'description'         => 'nullable|string',
             'media'               => 'required|array|min:1',
@@ -47,7 +48,6 @@ class PortfolioController extends Controller
             return $this->error(null, $e->getMessage(), 500);
         }
     }
-
     public function toggleBookmark(Request $request)
     {
         $request->validate([
@@ -123,5 +123,31 @@ class PortfolioController extends Controller
             return $this->error(null, $e->getMessage(), 500);
         }
     }
+    public function myClient()
+    {
+        $user = Auth::user();
 
+        if (!$user->isAgency() && !$user->isBusinessManager()) {
+            return $this->error(null, 'Unauthorized. Only agencies or managers can access this.', 403);
+        }
+
+        try {
+            $managedInfluencers = $user->clients()
+                ->select('users.id', 'name', 'email', 'avatar', 'role')
+                ->get()
+                ->map(function ($influencer) {
+                    return [
+                        'id'          => $influencer->id,
+                        'name'        => $influencer->name,
+                        'email'       => $influencer->email,
+                        'avatar_url'  => $influencer->avatar ? asset('storage/' . $influencer->avatar) : null,
+                        'role'        => $influencer->role,
+                    ];
+                });
+
+            return $this->success($managedInfluencers, 'Managed influencers with permissions retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 500);
+        }
+    }
 }
