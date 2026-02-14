@@ -13,6 +13,10 @@ class Contest extends Model
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function sponsorships()
     {
@@ -22,13 +26,13 @@ class Contest extends Model
     public function collaborators()
     {
         return $this->belongsToMany(User::class, 'contest_collaborators')
-                    ->withPivot('status')
-                    ->withTimestamps();
+            ->withPivot('status')
+            ->withTimestamps();
     }
     public function participants()
     {
         return $this->belongsToMany(User::class, 'contest_participants', 'contest_id', 'user_id')
-                    ->withPivot('payment_status')
-                    ->withTimestamps();
+            ->withPivot('payment_status')
+            ->withTimestamps();
     }
 }

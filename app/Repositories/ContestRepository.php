@@ -9,7 +9,6 @@ class ContestRepository
 {
     public function store(array $data)
     {
-
         return Contest::create($data);
     }
 
@@ -42,10 +41,10 @@ class ContestRepository
         return Contest::whereHas('participants', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })
-        ->with(['creator:id,name'])
-        ->withCount('participants')
-        ->latest()
-        ->get();
+            ->with(['creator:id,name'])
+            ->withCount('participants')
+            ->latest()
+            ->get();
     }
     public function isUserJoined($contestId, $userId)
     {

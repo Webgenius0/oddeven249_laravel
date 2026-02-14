@@ -19,21 +19,45 @@ class ContestService
     {
         DB::beginTransaction();
         try {
+            $user = auth()->user();
+            $targetCreatorId = $user->id;
+            $createdBy = null;
+            if (!empty($data['creator_id'])) {
+                $requestedUserId = (int) $data['creator_id'];
+
+                if ($user->id !== $requestedUserId && ($user->isAgency() || $user->isBusinessManager())) {
+                    if (!$user->clients()->where('user_id', $requestedUserId)->exists()) {
+                        throw new Exception("Unauthorized: You are not the manager of this user.");
+                    }
+
+                    $targetCreatorId = $requestedUserId;
+                    $createdBy = $user->id;
+                }
+            }
+
             if (isset($data['prize_photo'])) {
                 $data['prize_photo_url'] = uploadImage($data['prize_photo'], 'contests/photos');
             }
             if (isset($data['document'])) {
                 $data['document_url'] = uploadImage($data['document'], 'contests/docs');
             }
-
-            $data['creator_id'] = auth()->id() ?? 1;
             $dbData = collect($data)->only([
-                        'creator_id', 'title', 'description', 'rules', 'prize',
-                        'end_date', 'entry_fee', 'total_slots', 'prize_photo_url', 'document_url', 'is_published'
-                    ])->toArray();
+                'title',
+                'description',
+                'rules',
+                'prize',
+                'end_date',
+                'entry_fee',
+                'total_slots',
+                'is_published'
+            ])->toArray();
+
+            $dbData['creator_id'] = $targetCreatorId;
+            $dbData['created_by'] = $createdBy;
+            $dbData['prize_photo_url'] = $data['prize_photo_url'] ?? null;
+            $dbData['document_url'] = $data['document_url'] ?? null;
 
             $contest = $this->contestRepo->store($dbData);
-            // 2.save sponsor(if exit)
             if (isset($data['sponsors']) && is_array($data['sponsors'])) {
                 foreach ($data['sponsors'] as $sponsor) {
                     $contest->sponsorships()->create([
@@ -44,20 +68,16 @@ class ContestService
                 }
             }
 
-            // 3.add collaborators(if exits)
             if (isset($data['collaborators']) && is_array($data['collaborators'])) {
-                foreach ($data['collaborators'] as $userId) {
-                    $contest->collaborators()->attach($userId, [
-                        'status' => 'invited',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+                $contest->collaborators()->attach($data['collaborators'], [
+                    'status' => 'invited',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
 
             DB::commit();
-            return $contest->load(['sponsorships', 'collaborators']);
-
+            return $contest->load(['sponsorships', 'collaborators', 'createdBy']);
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception("Error creating contest: " . $e->getMessage());
@@ -91,8 +111,16 @@ class ContestService
             }
 
             $dbData = collect($data)->only([
-                'title', 'description', 'rules', 'prize',
-                'end_date', 'entry_fee', 'total_slots', 'prize_photo_url', 'document_url', 'is_published'
+                'title',
+                'description',
+                'rules',
+                'prize',
+                'end_date',
+                'entry_fee',
+                'total_slots',
+                'prize_photo_url',
+                'document_url',
+                'is_published'
             ])->toArray();
 
             $contest = $this->contestRepo->update($id, $dbData);
@@ -167,7 +195,7 @@ class ContestService
     public function getContestDetailsData($id)
     {
         $contest = $this->contestRepo->getContestForDetails($id)
-                        ->load(['creator', 'sponsorships.sponsor', 'collaborators', 'participants']);
+            ->load(['creator', 'sponsorships.sponsor', 'collaborators', 'participants']);
         $now = now();
         $endDate = \Carbon\Carbon::parse($contest->end_date);
         $timeLeft = $now->diffInDays($endDate, false);

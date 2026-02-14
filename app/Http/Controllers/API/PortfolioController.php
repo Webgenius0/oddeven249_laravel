@@ -42,7 +42,7 @@ class PortfolioController extends Controller
         ]);
 
         try {
-            $portfolio = $this->portfolioService->storePortfolio(Auth::user(), $request->all());
+            $portfolio = $this->portfolioService->storePortfolio(auth()->user(), $request->all());
             return $this->success($portfolio, 'Portfolio created successfully!', 201);
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
@@ -64,7 +64,7 @@ class PortfolioController extends Controller
     public function show(Request $request)
     {
         $request->validate([
-        'portfolio_id' => 'required|exists:portfolios,id'
+            'portfolio_id' => 'required|exists:portfolios,id'
         ]);
         $id = $request->portfolio_id;
         try {
