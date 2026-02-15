@@ -5,10 +5,12 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\BusinessManagerController;
 use App\Http\Controllers\Api\ContestController;
 use App\Http\Controllers\Api\DealsController;
+use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\InteractionController;
 use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
+use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\User\UserController;
 use Illuminate\Http\Request;
@@ -122,5 +124,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-managers', 'getMyManagers');
         Route::post('/store', 'storeManager');
         Route::post('/store-agency', 'storeAgency');
+    });
+
+    Route::prefix('feedbacks')->controller(FeedbackController::class)->group(function () {
+        Route::post('/store', 'store');
+        Route::get('/user-feedback', 'index');
+
+    });
+    Route::prefix('support')->controller(SupportController::class)->group(function () {
+        Route::post('/ticket/store', 'storeTicket');
+        Route::get('/messages', 'getMessages');
+        Route::post('/messages/reply', 'sendMessage');
     });
 });

@@ -8,6 +8,8 @@ use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\SocialMediaController;
 use App\Http\Controllers\Web\Backend\SystemSettingController;
+use App\Http\Controllers\Web\Backend\FeedbackController;
+use App\Http\Controllers\Web\Backend\SupportController;
 
 Route::get('/dashboard', [DashBoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -19,7 +21,6 @@ Route::controller(SystemSettingController::class)->group(function () {
 Route::controller(ProfileController::class)->group(function () {
     Route::post('/update-profile-picture', 'UpdateProfilePicture')->name('update.profile.picture');
     Route::post('/update-profile-password', 'UpdatePassword')->name('update.Password');
-
     //! Route for ProfileController
     Route::get('/profile', 'showProfile')->name('profile.setting');
     Route::post('/update-profile', 'UpdateProfile')->name('update.profile');
@@ -46,4 +47,16 @@ Route::prefix('category')->name('category.')->group(function () {
     Route::post('/update/{id}', [CategoryController::class, 'update'])->name('update');
     Route::get('/status/{id}', [CategoryController::class, 'status'])->name('status');
     Route::delete('/destroy/{id}', [CategoryController::class, 'destroy'])->name('destroy');
+});
+Route::prefix('feedback')->name('feedback.')->group(function () {
+    Route::get('/', [FeedbackController::class, 'index'])->name('index');
+    Route::get('/status/{id}', [FeedbackController::class, 'status'])->name('status');
+    Route::delete('/destroy/{id}', [FeedbackController::class, 'destroy'])->name('destroy');
+    Route::get('/show/{id}', [FeedbackController::class, 'show'])->name('show');
+});
+Route::prefix('support')->name('support.')->group(function () {
+    Route::get('/', [SupportController::class, 'index'])->name('index');
+    Route::get('/show/{id}', [SupportController::class, 'show'])->name('show');
+    Route::post('/reply/{id}', [SupportController::class, 'adminReply'])->name('reply');
+    Route::delete('/destroy/{id}', [SupportController::class, 'destroy'])->name('destroy');
 });
