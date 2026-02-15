@@ -16,26 +16,29 @@ class PortfolioService
 
     public function storePortfolio($user, array $data)
     {
-        
         $targetUserId = $user->id;
+        $createdBy = null;
 
         if (!empty($data['user_id']) && ($user->isAgency() || $user->isBusinessManager())) {
-            $targetUserId = (int) $data['user_id'];
+            $requestedUserId = (int) $data['user_id'];
 
-            if (!$user->clients()->where('user_id', $targetUserId)->exists()) {
-                throw new \Exception("Unauthorized: You are not the manager of this influencer.");
+            if ($user->id !== $requestedUserId) {
+                if (!$user->clients()->where('user_id', $requestedUserId)->exists()) {
+                    throw new \Exception("Unauthorized: You are not the manager of this influencer.");
+                }
+                $targetUserId = $requestedUserId;
+                $createdBy = $user->id;
             }
         }
-
         $portfolioData = [
             'user_id'     => $targetUserId,
+            'created_by'  => $createdBy,
             'title'       => $data['title'],
             'description' => $data['description'] ?? null,
         ];
 
         $portfolio = $this->portfolioRepo->create($portfolioData);
 
-        // মিডিয়া আপলোড আগের মতোই থাকবে...
         if (isset($data['media']) && is_array($data['media'])) {
             foreach ($data['media'] as $item) {
                 if (isset($item['file'])) {
@@ -51,7 +54,7 @@ class PortfolioService
             }
         }
 
-        return $portfolio->load('media');
+        return $portfolio->load(['media', 'creator']);
     }
     public function toggleBookmark($user, $portfolioId)
     {
@@ -72,14 +75,14 @@ class PortfolioService
             ->with([
                 'portfolio' => function ($query) {
                     $query->with(['media', 'user:id,name,role,avatar'])
-                          ->withCount([
-                              'interactions as views_count' => function ($q) {
-                                  $q->where('interaction_type', 'view');
-                              },
-                              'interactions as likes_count' => function ($q) {
-                                  $q->where('interaction_type', 'like');
-                              }
-                          ]);
+                        ->withCount([
+                            'interactions as views_count' => function ($q) {
+                                $q->where('interaction_type', 'view');
+                            },
+                            'interactions as likes_count' => function ($q) {
+                                $q->where('interaction_type', 'like');
+                            }
+                        ]);
                 }
             ])
             ->latest()

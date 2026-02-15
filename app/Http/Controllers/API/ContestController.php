@@ -43,6 +43,7 @@ class ContestController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'creator_id'  => 'nullable|exists:users,id',
             'title'       => 'required|string|max:255',
             'prize'       => 'required|numeric',
             'end_date'    => 'required|date',
@@ -65,7 +66,6 @@ class ContestController extends Controller
         try {
             $contest = $this->contestService->createContest($request->all());
             return $this->success($contest, 'Contest created successfully!', 200);
-
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
         }
@@ -165,7 +165,6 @@ class ContestController extends Controller
             });
 
             return $this->success($data, 'Participated contests retrieved successfully!');
-
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
         }

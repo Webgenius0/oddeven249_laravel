@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\SocialMediaController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\User\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/user', function (Request $request) {
