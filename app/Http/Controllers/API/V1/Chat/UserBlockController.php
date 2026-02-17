@@ -1,0 +1,74 @@
+<?php
+namespace App\Http\Controllers\Api\V1\Chat;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\Chat\ChatService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+
+class UserBlockController extends Controller
+{
+    use ApiResponse;
+    public function __construct(protected ChatService $chatService)
+    {}
+
+    public function index(Request $request)
+    {
+        $authUser = $request->user();
+
+        // Dynamic inputs
+        $perPage = (int) $request->get('per_page', 20);
+        $perPage = min(max($perPage, 5), 50); // safety: 5–50
+
+        $search = $request->get('search');
+
+        $users = User::query()->where('id', '!=', $authUser->id)
+
+        // I blocked them
+            ->whereNotIn('id', function ($q) use ($authUser) {
+                $q->select('blocked_id')->from('user_blocks')->where('user_id', $authUser->id);
+            })
+
+        // They blocked me
+            ->whereNotIn('id', function ($q) use ($authUser) {
+                $q->select('user_id')->from('user_blocks')->where('blocked_id', $authUser->id);
+            })
+
+        // Optional search
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+
+            ->select('id', 'name', 'email', 'avatar')
+            ->orderBy('name')
+            ->paginate($perPage);
+
+        return $this->success($users, 'Users Fetched Successfully', 200, true);
+    }
+
+    // Toggle block/unblock for a user.  SHOW IN USER MODEL RELATIONS AS WELL
+    public function toggleBlock(Request $request, User $user)
+    {
+        $isBlocked = $this->chatService->toggleBlock($request->user(), $user->id);
+
+        return $this->success($isBlocked, 'User ' . $isBlocked ? 'blocked' : 'unblocked', 200);
+    }
+
+    // Toggle restrict/unrestrict for a user.
+    public function toggleRestrict(Request $request, User $user)
+    {
+        $isRestricted = $this->chatService->toggleRestrict($request->user(), $user->id);
+        return $this->success($isRestricted, 'User ' . $isRestricted ? 'restricted' : 'unrestricted', 200);
+    }
+
+    public function onlineUsers(Request $request)
+    {
+        $users = User::query()->online()->where('id', '!=', $request->user()->id)->select('id', 'name', 'avatar', 'last_seen_at')->get();
+
+        return $this->success($users, 'Users fetched successfully');
+    }
+
+}
