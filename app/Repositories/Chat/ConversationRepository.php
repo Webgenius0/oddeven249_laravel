@@ -4,6 +4,7 @@ namespace App\Repositories\Chat;
 use App\Events\ConversationEvent;
 use App\Events\MessageEvent;
 use App\Http\Resources\Chat\ConversationResource;
+use App\Http\Resources\Chat\MessageResource;
 use App\Models\Conversation;
 use App\Models\ConversationInvite;
 use App\Models\ConversationParticipant;
@@ -551,6 +552,16 @@ class ConversationRepository
         //  Broadcast system message to remaining users
         event(new MessageEvent(($message->is_pinned ? 'pinned' : 'unpinned'), $systemMessage->conversation_id, $message->toArray()));
 
+        // $message->load([
+        //     'sender:id,name',
+        //     'reactions',
+        //     'attachments',
+        //     'statuses',
+        //     'replyTo.sender:id,name',
+        //     'forwardedFrom.sender:id,name',
+        //     'forwardedFrom.conversation:id,name,type',
+        // ]);
+        // return new MessageResource($message);
         return ['message' => $message, 'last_message' => $systemMessage];
     }
 

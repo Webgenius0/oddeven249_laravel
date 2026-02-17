@@ -6,7 +6,6 @@ use App\Events\MessageEvent;
 use App\Http\Resources\Chat\ConversationResource;
 use App\Http\Resources\Chat\MediaLibraryResource;
 use App\Http\Resources\Chat\MessageResource;
-use App\Jobs\SendPushNotificationJob;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
@@ -382,7 +381,17 @@ class MessageRepository
         }
         $data['edited_at'] = now();
         $message->update($data);
-        return $message->refresh();
+
+        $message->load([
+            'sender:id,name',
+            'reactions',
+            'attachments',
+            'statuses',
+            'replyTo.sender:id,name',
+            'forwardedFrom.sender:id,name',
+            'forwardedFrom.conversation:id,name,type',
+        ]);
+        return new MessageResource($message);
     }
 
     public function deleteMessagesForUser(int $userId, array $messageIds)

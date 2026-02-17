@@ -7,9 +7,7 @@ use App\Http\Controllers\Api\V1\Chat\ReactionController;
 use App\Http\Controllers\Api\V1\Chat\UserBlockController;
 use Illuminate\Support\Facades\Route;
 
-// Route::prefix('v1')->middleware(['auth:sanctum', 'last_seen'])->group(function () {
-Route::prefix('v1')->middleware(['auth', 'verified', 'last_seen'])->group(function () {
-
+Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     // -------------------- Conversations --------------------
     // create group & list conversations
     Route::get('conversations/{conversation}/media', [ConversationController::class, 'mediaLibrary']);
