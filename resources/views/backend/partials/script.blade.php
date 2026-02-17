@@ -39,7 +39,6 @@
 <!-- Theme js-->
 <script src="{{ asset('backend/js/script.js') }}"></script>
 {{-- <script src="{{ asset('backend/js/customizer.js') }}"></script> --}}
-
 {{-- dropify start --}}
 <script>
     $(document).ready(function() {
