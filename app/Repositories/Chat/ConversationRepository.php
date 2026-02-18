@@ -4,7 +4,6 @@ namespace App\Repositories\Chat;
 use App\Events\ConversationEvent;
 use App\Events\MessageEvent;
 use App\Http\Resources\Chat\ConversationResource;
-use App\Http\Resources\Chat\MessageResource;
 use App\Models\Conversation;
 use App\Models\ConversationInvite;
 use App\Models\ConversationParticipant;
@@ -158,6 +157,7 @@ class ConversationRepository
         $conversation->groupSetting()->create([
             'description' => $data['group']['description'] ?? null,
             'type'        => $data['group']['type'] ?? 'private',
+            'avatar'      => uploadFile($data['group']['avatar'], 'uploads/groups/avatars') ?? null,
         ]);
 
         // invite link
