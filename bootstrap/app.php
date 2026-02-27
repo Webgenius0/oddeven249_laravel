@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api')
                 ->group(base_path('routes/mizan_api.php'));
 
-            Route::middleware(['web', 'auth', 'verified']) // Apply middleware
+            Route::middleware(['web', 'auth', 'verified'])
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
