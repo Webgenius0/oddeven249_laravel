@@ -248,7 +248,6 @@ class DealsController extends Controller
             return $this->error(null, $e->getMessage(), $code);
         }
     }
-
     public function processExtensionAction(Request $request)
     {
         $validated = $request->validate([
@@ -267,7 +266,6 @@ class DealsController extends Controller
             return $this->error(null, $e->getMessage(), $code);
         }
     }
-
     public function getAllExtensionRequests(Request $request)
     {
         $effectiveId = $this->getEffectiveUserId($request);
