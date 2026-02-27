@@ -20,13 +20,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api')
                 ->group(base_path('routes/mizan_api.php'));
 
+
+            Route::middleware('api')
+                ->prefix('api')
+                ->group(base_path('routes/mizan_api.php'));
+
             Route::middleware(['web', 'auth', 'verified']) // Apply middleware
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
 
             Route::middleware(['web'])
-                ->group(base_path('routes/frontend.php'));
+                    ->group(base_path('routes/frontend.php'));
 
             Route::middleware('api') //api
                 ->prefix('api')
