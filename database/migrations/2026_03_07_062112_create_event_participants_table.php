@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class () extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,7 +14,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
             $table->foreignId('participant_id')->constrained('users')->onDelete('cascade');
-            $table->enum('payment_status', ['pending', 'paid', 'reject'])->default('pending')->comment('pending/paid/reject');
+            $table->foreignId('event_ticket_id')->constrained('event_tickets')->onDelete('cascade');
+            $table->enum('payment_status', ['pending', 'paid', 'free', 'rejected'])->default('pending');
+            $table->integer('quantity')->default(1);
+            $table->integer('used_quantity')->default(0);
             $table->timestamps();
         });
     }

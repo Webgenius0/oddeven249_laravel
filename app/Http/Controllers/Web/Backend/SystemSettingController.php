@@ -35,6 +35,8 @@ class SystemSettingController extends Controller
             'logo'           => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'favicon'        => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'description'    => 'nullable|string',
+            'platform_commission' => 'required|numeric|min:0|max:100',
+            'tax_rate'            => 'required|numeric|min:0|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -50,6 +52,8 @@ class SystemSettingController extends Controller
             $setting->logo           = $request->logo;
             $setting->favicon        = $request->favicon;
             $setting->description    = $request->description;
+            $setting->platform_commission = $request->platform_commission;
+            $setting->tax_rate            = $request->tax_rate;
 
             if ($request->hasFile('logo')) {
                 $setting->logo = uploadImage($request->file('logo'), 'logos');
@@ -77,8 +81,11 @@ class SystemSettingController extends Controller
                 $setting->favicon = $data->favicon;
             }
 
-
             $setting->save();
+
+            \Illuminate\Support\Facades\Cache::forget('platform_commission_rate');
+            \Illuminate\Support\Facades\Cache::forget('platform_tax_rate');
+
             return back()->with('t-success', 'Updated successfully');
         } catch (Exception) {
             return back()->with('t-error', 'Failed to update');

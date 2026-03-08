@@ -40,4 +40,20 @@ class Event extends Model
             ->withPivot('payment_status')
             ->withTimestamps();
     }
+    public function getTotalParticipantsAttribute()
+    {
+        return $this->event_participants()->count();
+    }
+
+    public function getTimeLeftAttribute()
+    {
+        if ($this->date->isPast()) {
+            return "Event Ended";
+        }
+        return $this->date->diffForHumans(['parts' => 2]); // এটি '2 days from now' বা 'in 5 hours' রিটার্ন করবে
+    }
+    public function tickets()
+    {
+        return $this->hasMany(EventTicket::class);
+    }
 }

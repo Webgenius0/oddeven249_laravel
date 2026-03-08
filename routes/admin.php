@@ -4,12 +4,14 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Web\Backend\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\Backend\DashBoardController;
+use App\Http\Controllers\Web\Backend\DealController;
 use App\Http\Controllers\Web\Backend\DynamicPageController;
 use App\Http\Controllers\Web\Backend\ProfileController;
 use App\Http\Controllers\Web\Backend\SocialMediaController;
 use App\Http\Controllers\Web\Backend\SystemSettingController;
 use App\Http\Controllers\Web\Backend\FeedbackController;
 use App\Http\Controllers\Web\Backend\SupportController;
+use App\Http\Controllers\Web\Backend\UserController;
 
 Route::get('/dashboard', [DashBoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -59,4 +61,17 @@ Route::prefix('support')->name('support.')->group(function () {
     Route::get('/show/{id}', [SupportController::class, 'show'])->name('show');
     Route::post('/reply/{id}', [SupportController::class, 'adminReply'])->name('reply');
     Route::delete('/destroy/{id}', [SupportController::class, 'destroy'])->name('destroy');
+});
+Route::prefix('user')->name('user.')->group(function () {
+    Route::get('/', [UserController::class, 'index'])->name('index');
+    Route::get('/status/{id}', [UserController::class, 'status'])->name('status');
+    Route::delete('/destroy/{id}', [UserController::class, 'destroy'])->name('destroy');
+
+    Route::get('/show/{id}', [UserController::class, 'show'])->name('show');
+});
+Route::prefix('deal')->name('deal.')->group(function () {
+    Route::get('/', [DealController::class, 'index'])->name('index');
+    Route::get('/{id}', [DealController::class, 'show'])->name('show');
+    Route::post('/dispute/resolve', [DealController::class, 'resolveDispute'])->name('dispute.resolve');
+    Route::post('/dispute/{id}/under-review', [DealController::class, 'markUnderReview'])->name('dispute.review');
 });

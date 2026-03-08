@@ -18,7 +18,7 @@ class DealRepository
             $q->where('buyer_id', $userId)
               ->orWhere('seller_id', $userId);
         })
-        ->with(['buyer', 'seller']); 
+        ->with(['buyer', 'seller']);
 
         if ($status) {
             $query->where('status', $status);
@@ -49,5 +49,12 @@ class DealRepository
 
         return $query->with(['ratedBy:id,name', 'deal:id,campaign_name'])
                      ->first();
+    }
+    public function getRatingByDealId($dealId, $userId)
+    {
+        return \App\Models\DealRating::where('deal_id', $dealId)
+            ->where('rated_by', $userId)
+            ->with(['ratedBy:id,name', 'deal:id,campaign_name']) // প্রয়োজনীয় রিলেশনসহ
+            ->first();
     }
 }

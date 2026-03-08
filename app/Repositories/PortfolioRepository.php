@@ -57,7 +57,7 @@ class PortfolioRepository
             ->latest()
             ->get();
     }
-    public function getAllWithFilters($role = null, $excludeUserId = null)
+    public function getAllWithFilters($role = null, $excludeUserId = null, $sortBy = 'latest')
     {
         $query = \App\Models\Portfolio::with(['media', 'user:id,name,role'])
             ->withCount([
@@ -66,18 +66,48 @@ class PortfolioRepository
                 },
                 'interactions as likes_count' => function ($query) {
                     $query->where('interaction_type', 'like');
-                }
+                },
+                'interactions as recent_views_count' => function ($query) {
+                    $query->where('interaction_type', 'view')
+                          ->where('created_at', '>=', now()->subDays(7));
+                },
+                'interactions as recent_likes_count' => function ($query) {
+                    $query->where('interaction_type', 'like')
+                          ->where('created_at', '>=', now()->subDays(7));
+                },
             ]);
+
         if ($excludeUserId) {
             $query->where('user_id', '!=', $excludeUserId);
         }
+
         if ($role) {
             $query->whereHas('user', function ($q) use ($role) {
                 $q->where('role', $role);
             });
         }
 
-        return $query->latest()->get();
+        if ($sortBy === 'trending') {
+            $query->orderByRaw('
+        (
+            (SELECT COUNT(*) FROM interactions
+                WHERE target_type = "portfolio"
+                AND target_id = portfolios.id
+                AND interaction_type = "view"
+                AND created_at >= ?) * 1
+            +
+            (SELECT COUNT(*) FROM interactions
+                WHERE target_type = "portfolio"
+                AND target_id = portfolios.id
+                AND interaction_type = "like"
+                AND created_at >= ?) * 3
+        ) DESC
+    ', [now()->subDays(7), now()->subDays(7)]);
+        } else {
+            $query->latest();
+        }
+
+        return $query->get();
     }
     public function getByIdWithMedia($id)
     {

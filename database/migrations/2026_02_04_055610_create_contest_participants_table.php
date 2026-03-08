@@ -10,6 +10,7 @@ return new class () extends Migration {
         Schema::create('contest_participants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contest_id')->constrained('contests')->onDelete('cascade');
+            $table->string('ip_address')->nullable();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('payment_status')->default('pending');
             $table->timestamps();

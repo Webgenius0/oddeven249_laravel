@@ -20,10 +20,12 @@ class PortfolioController extends Controller
     }
     public function index(Request $request)
     {
-        $role = $request->query('role');
+        $role       = $request->query('role');
+        $sortBy     = $request->query('sort_by', 'latest');
         $authUserId = auth()->id();
+
         try {
-            $portfolios = $this->portfolioService->getFilteredPortfolios($role, $authUserId);
+            $portfolios = $this->portfolioService->getFilteredPortfolios($role, $authUserId, $sortBy);
             return $this->success($portfolios, 'Portfolios retrieved successfully');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);

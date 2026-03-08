@@ -7,6 +7,7 @@ use App\Mail\RegistrationOtp;
 use App\Models\EmailOtp;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\WalletService;
 use App\Traits\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class RegisterController extends Controller
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'website_link' => 'nullable|url', // Added
         'category_id' => 'nullable|exists:categories,id', // Added
+        'document' => 'nullable|mimes:pdf,doc,docx|max:5120',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -61,7 +63,10 @@ class RegisterController extends Controller
         if (isset($data['avatar']) && $data['avatar'] instanceof \Illuminate\Http\UploadedFile) {
             $avatarPath = uploadImage($data['avatar'], 'avatars');
         }
-
+        $documentPath = null;
+        if (isset($data['document']) && $data['document'] instanceof \Illuminate\Http\UploadedFile) {
+            $documentPath = uploadImage($data['document'], 'documents');
+        }
         $code = rand(1000, 9999);
 
         $tempUser = EmailOtp::updateOrCreate(
@@ -79,6 +84,7 @@ class RegisterController extends Controller
                 'role' => $data['role'],
                 'website_link' => $data['website_link'] ?? null, // Added
                 'category_id' => $data['category_id'] ?? null,   // Added
+                'document' => $documentPath,
             ]
         );
 
@@ -89,7 +95,6 @@ class RegisterController extends Controller
             'data' => [],
         ], 200);
     }
-
     /**
      * Register User - temporary storage with OTP
      */
@@ -102,11 +107,12 @@ class RegisterController extends Controller
             'phone' => 'nullable|string|max:20',
             'phone_code' => 'nullable|string|max:10',
             'country' => 'nullable|string|max:50',
-            'role' => 'required|in:influencer,adviser,agency,business_manager,guest', // New validation
+            'role' => 'required|in:influencer,adviser,agency,business_manager,guest',
             'agree_to_terms' => 'required|boolean',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'website_link' => 'nullable|url', // Added
-            'category_id' => 'nullable|exists:categories,id', // Added
+            'website_link' => 'nullable|url',
+            'category_id' => 'nullable|exists:categories,id',
+            'document' => 'nullable|mimes:pdf,doc,docx|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -129,7 +135,7 @@ class RegisterController extends Controller
             }
         }
 
-        return $this->sendOtpTemp($request->only('name', 'email', 'password', 'phone_code', 'country', 'phone', 'avatar', 'role', 'website_link', 'category_id'));
+        return $this->sendOtpTemp($request->only('name', 'email', 'password', 'phone_code', 'document', 'country', 'phone', 'avatar', 'role', 'website_link', 'category_id'));
     }
     public function otpVerify(Request $request)
     {
@@ -161,11 +167,12 @@ class RegisterController extends Controller
             'phone' => $tempUser->phone,
             'email_verified_at' => now(),
             'avatar' => $tempUser->avatar,
-            'role' => $tempUser->role, // Add role
-            'website_link' => $tempUser->website_link, // Added
-            'category_id' => $tempUser->category_id,   // Added
+            'document' => $tempUser->document,
+            'role' => $tempUser->role,
+            'website_link' => $tempUser->website_link,
+            'category_id' => $tempUser->category_id,
         ]);
-
+        app(WalletService::class)->createWallet($user);
         if ($request->has('device_token')) {
             $user->device_token = $request->device_token;
             $user->save();

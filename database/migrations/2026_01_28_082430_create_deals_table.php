@@ -17,8 +17,11 @@ return new class () extends Migration {
             $table->text('description')->nullable();
             $table->datetime('valid_until');
             $table->string('duration');
-            $table->enum('status', ['pending', 'active', 'completed','rejected','delivered'])
-            ->default('pending')
+            $table->enum('status', [
+               'pending', 'active', 'delivered',
+               'completed', 'rejected', 'expired',
+               'disputed', 'refunded'
+            ])->default('pending')
             ->comment('Current state of the deal');
 
             $table->timestamps();

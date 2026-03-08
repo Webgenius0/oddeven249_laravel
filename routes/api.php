@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SocialMediaController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\User\UserController;
+use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/user', function (Request $request) {
@@ -38,24 +39,23 @@ Route::controller(RegisterController::class)->prefix('users/register')->group(fu
     Route::post('/reset-password', 'resetPassword');
     Route::post('/resend-forgot-password-otp', 'resendForgotPasswordOtp');
 });
-Route::controller(LoginController::class)->prefix('users/login')->group(function () {
-
-    // User Login
-    Route::post('/', 'userLogin');
+Route::controller(LoginController::class)->prefix('users')->group(function () {
+    Route::post('/login', 'userLogin');
     Route::post('/guest-login', 'guestLogin');
-    // Verify Email
     Route::post('/email-verify', 'emailVerify');
-
-    // Resend OTP
     Route::post('/otp-resend', 'otpResend');
-
-    // Verify OTP
     Route::post('/otp-verify', 'otpVerify');
-
-    //Reset Password
     Route::post('/reset-password', 'resetPassword');
+    Route::post('/refresh-token', 'refreshToken'); //new
 });
 
+// Protected — Token needed
+Route::controller(LoginController::class)->prefix('users')->middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', 'logout');
+    Route::post('/logout-all', 'logoutAllDevices');
+    Route::get('/sessions', 'activeSessions');
+    Route::delete('/sessions/{sessionId}', 'revokeSession');
+});
 Route::middleware('auth:sanctum')->group(function () {
     Route::controller(SystemSettingController::class)->group(function () {
         Route::get('/site-settings', 'index');
@@ -70,10 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/update', 'updateUser');
         Route::post('/update-password', 'updatePassword');
         Route::delete('/delete-account', 'deleteAccount');
-        Route::post('/logout', 'logoutUser');
     });
 
-    Route::prefix('deals')->controller(DealsController::class)->middleware(['auth:sanctum', 'role:influencer,advertiser,business_manager,agency'])->group(function () {
+    Route::prefix('deals')->controller(DealsController::class)->middleware(['auth:sanctum', 'role:influencer,advertiser,business_manager,agency','check.exclusive'])->group(function () {
         Route::get('/', 'index')
         ->middleware(['role:influencer,advertiser,business_manager,agency', 'check_permission:view_deal,deal_manage_permission']);
         Route::post('/store', 'store')->middleware('role:influencer,advertiser,agency', 'check_permission:deal_manage_permission');
@@ -88,6 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
          ->middleware(['role:influencer,advertiser,business_manager,agency', 'check_permission:accept_reject_deals']);
         Route::post('/process-extension', 'processExtensionAction');
         Route::get('/extension-history', 'getAllExtensionRequests');
+        Route::post('/raise-dispute', 'raiseDispute');
+
     });
 
     Route::prefix('portfolios')->controller(PortfolioController::class)->group(function () {
@@ -112,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/join-contest', 'join');
         Route::post('/announce-winner', 'announceWinner');
         Route::get('/participants', 'allParticipants');
+        Route::get('/analytics', 'analytics');
     });
 
     Route::prefix('interactions')->controller(InteractionController::class)->group(function () {
@@ -134,5 +136,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/ticket/store', 'storeTicket');
         Route::get('/messages', 'getMessages');
         Route::post('/messages/reply', 'sendMessage');
+    });
+    Route::prefix('wallet')->controller(WalletController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/transactions', 'transactions');
+        Route::post('/withdraw', 'withdraw');
     });
 });

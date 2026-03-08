@@ -39,6 +39,7 @@ class BusinessManagerController extends Controller
 
     public function storeAgency(Request $request)
     {
+        
         $validator = Validator::make($request->all(), [
             'user_id'     => 'required|exists:users,id',
             'permissions' => 'nullable|array',
@@ -56,7 +57,6 @@ class BusinessManagerController extends Controller
         }
     }
 
-    // ড্রপডাউনের জন্য এভেইল্যাবল ইউজারদের লিস্ট
     public function getAvailableUsers(Request $request)
     {
         $role = $request->query('role', 'business_manager');

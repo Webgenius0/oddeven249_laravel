@@ -17,7 +17,6 @@ class Contest extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-
     public function sponsorships()
     {
         return $this->hasMany(Sponsorship::class);
@@ -34,5 +33,9 @@ class Contest extends Model
         return $this->belongsToMany(User::class, 'contest_participants', 'contest_id', 'user_id')
             ->withPivot('payment_status')
             ->withTimestamps();
+    }
+    public function winners()
+    {
+        return $this->hasMany(\App\Models\ContestWinner::class);
     }
 }

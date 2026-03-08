@@ -92,9 +92,9 @@ class PortfolioService
     {
         return $this->portfolioRepo->getAllPortfolioForUser($user->id);
     }
-    public function getFilteredPortfolios($role = null, $excludeUserId = null)
+    public function getFilteredPortfolios($role = null, $excludeUserId = null, $sortBy = 'latest')
     {
-        return $this->portfolioRepo->getAllWithFilters($role, $excludeUserId);
+        return $this->portfolioRepo->getAllWithFilters($role, $excludeUserId, $sortBy);
     }
 
     public function getPortfolioDetails($id)

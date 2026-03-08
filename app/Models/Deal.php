@@ -13,6 +13,11 @@ class Deal extends Model
 
     protected $hidden = ['updated_at'];
 
+    public function dispute()
+    {
+
+        return $this->hasOne(DealDispute::class, 'deal_id');
+    }
     public function buyer()
     {
         return $this->belongsTo(User::class, 'buyer_id');

@@ -9,6 +9,10 @@ return new class () extends Migration {
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('code')->nullable()->after('email');
+            $table->string('document')->nullable();
+            $table->string('website_link')->nullable();
+            $table->unsignedBigInteger('category_id')->nullable()->after('website_link');
+
         });
     }
 

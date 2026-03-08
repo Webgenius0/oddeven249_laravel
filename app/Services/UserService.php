@@ -49,7 +49,7 @@ class UserService
             if (!$agency || $agency->role !== 'agency') {
                 throw new Exception("The selected user is not a valid Agency!");
             }
-
+            $isExclusive = isset($data['exclusive']) && filter_var($data['exclusive'], FILTER_VALIDATE_BOOLEAN);
             $permissions = [
                 'chat_permission'         => filter_var($data['permissions']['chat'] ?? false, FILTER_VALIDATE_BOOLEAN),
                 'portfolio_permission'    => filter_var($data['permissions']['portfolio'] ?? false, FILTER_VALIDATE_BOOLEAN),
@@ -58,7 +58,7 @@ class UserService
                 'create_event_permission' => filter_var($data['permissions']['event'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
 
-            return $this->userRepo->assignToUser(auth()->id(), $agency->id, $permissions);
+            return $this->userRepo->assignToUser(auth()->id(), $agency->id, $permissions, $isExclusive);
 
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -78,13 +78,13 @@ class UserService
             ->select('users.id', 'users.name', 'users.email', 'users.avatar')
             ->get()
             ->map(function ($member) {
-                // পিভট টেবিল থেকে পারমিশন ডিকোড করা
                 $member->permissions = $member->pivot->permissions
                     ? json_decode($member->pivot->permissions, true)
                     : null;
 
-                // ক্লিন আউটপুটের জন্য পিভট অবজেক্টটি সরিয়ে ফেলা
+                $member->is_exclusive = (bool)($member->pivot->is_exclusive ?? false);
                 unset($member->pivot);
+
                 return $member;
             });
     }

@@ -70,7 +70,40 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="col-md-6 mt-4">
+                                        <div class="input-style-1">
+                                            <label for="platform_commission">Platform Commission (%):</label>
+                                            <input type="number" step="0.01" placeholder="e.g. 10.00"
+                                                id="platform_commission"
+                                                class="form-control @error('platform_commission') is-invalid @enderror"
+                                                name="platform_commission"
+                                                value="{{ $setting->platform_commission ?? '0.00' }}" />
+                                            <small class="text-muted">Percentage to be deducted from deals.</small>
+                                            @error('platform_commission')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                            @enderror
+                                        </div>
+                                    </div>
 
+                                    <div class="col-md-6 mt-4">
+                                        <div class="input-style-1">
+                                            <label for="tax_rate">Tax Rate (%):</label>
+                                            <input type="number" step="0.01" placeholder="e.g. 5.00" id="tax_rate"
+                                                class="form-control @error('tax_rate') is-invalid @enderror" name="tax_rate"
+                                                value="{{ $setting->tax_rate ?? '0.00' }}" />
+                                            <small class="text-muted">Government tax percentage on total deal
+                                                amount.</small>
+                                            @error('tax_rate')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-6 mt-4">
                                         <div class="input-style-1">

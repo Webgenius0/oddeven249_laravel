@@ -20,16 +20,21 @@ class UserRepository
         return User::findOrFail($id);
     }
 
-    public function assignToUser($influencerId, $managerId, array $permissions)
+    public function assignToUser($influencerId, $managerId, array $permissions, $isExclusive = false)
     {
         $influencer = User::findOrFail($influencerId);
 
-        // syncWithoutDetaching ব্যবহার করলে আগের এসাইনমেন্ট ডিলিট হবে না,
-        // শুধু নতুনটা অ্যাড হবে বা আপডেট হবে।
         $influencer->agencies()->syncWithoutDetaching([
-            $managerId => ['permissions' => json_encode($permissions)]
+            $managerId => [
+                'permissions'  => json_encode($permissions),
+                'is_exclusive' => $isExclusive
+            ]
         ]);
+        $agency = User::with(['clients' => function ($query) use ($influencerId) {
+            $query->where('user_id', $influencerId); 
+        }])->find($managerId);
+        $agency->is_exclusive = (bool)$isExclusive;
 
-        return User::find($managerId);
+        return $agency;
     }
 }

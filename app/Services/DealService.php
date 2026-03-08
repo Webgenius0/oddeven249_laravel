@@ -12,12 +12,13 @@ use Illuminate\Support\Facades\DB;
 class DealService
 {
     protected $dealRepository;
+    protected $walletService;
 
-    public function __construct(DealRepository $dealRepository)
+    public function __construct(DealRepository $dealRepository, WalletService $walletService)
     {
         $this->dealRepository = $dealRepository;
+        $this->walletService  = $walletService;
     }
-
     private function resolveId($user, $effectiveId = null)
     {
         return $effectiveId ?: $user->id;
@@ -25,8 +26,8 @@ class DealService
 
     public function storeDeal($user, array $data, $effectiveId = null)
     {
-        $buyerId = ( int) $this->resolveId($user, $effectiveId);
-        $targetId = ( int) $data['target_id'];
+        $buyerId  = (int) $this->resolveId($user, $effectiveId);
+        $targetId = (int) $data['target_id'];
 
         if ($buyerId == $targetId) {
             throw new \Exception("You cannot create a deal with yourself!");
@@ -60,9 +61,55 @@ class DealService
 
     public function updateDealStatus(Deal $deal, string $status)
     {
-        $deal->status = $status;
-        $deal->save();
-        return $deal;
+        return DB::transaction(function () use ($deal, $status) {
+
+            if ($deal->status === 'disputed') {
+                throw new Exception("This deal is under dispute. Status cannot be changed manually.", 403);
+            }
+
+            if ($status === 'active' && $deal->status === 'pending') {
+                $buyer = User::find($deal->buyer_id);
+
+                $wallet = $this->walletService->getOrCreateWallet($buyer);
+                if (!$wallet->hasSufficientBalance($deal->amount)) {
+                    throw new Exception(
+                        "Buyer has insufficient wallet balance. Required: {$deal->amount}, Available: {$wallet->available_balance}"
+                    );
+                }
+
+                $this->walletService->hold(
+                    user:        $buyer,
+                    amount:      $deal->amount,
+                    sourceType:  'deal',
+                    sourceId:    $deal->id,
+                    description: "Hold for Deal #{$deal->id} — {$deal->campaign_name}"
+                );
+            }
+            if ($status === 'rejected' && $deal->status === 'pending') {
+                $buyer = User::find($deal->buyer_id);
+                $wallet = $this->walletService->getOrCreateWallet($buyer);
+
+                if ($wallet->held_balance >= $deal->amount) {
+                    $this->walletService->release(
+                        user:        $buyer,
+                        amount:      $deal->amount,
+                        sourceType:  'deal',
+                        sourceId:    $deal->id,
+                        description: "Refund — Deal #{$deal->id} rejected"
+                    );
+                }
+            }
+
+            $deal->status = $status;
+            $deal->save();
+
+            return $deal;
+        });
+    }
+
+    public function getRatingByDealId($dealId, $userId)
+    {
+        return $this->dealRepository->getRatingByDealId($dealId, $userId);
     }
 
     public function rateDeal($user, array $data, $effectiveId = null)
@@ -123,10 +170,17 @@ class DealService
 
     public function handleDeliveryAction($user, $data, $effectiveId = null)
     {
-        $delivery = \App\Models\DealDelivery::findOrFail($data['delivery_id']);
-        $deal = $delivery->deal;
-        $myId = $this->resolveId($user, $effectiveId);
+        $delivery = \App\Models\DealDelivery::with('deal')->findOrFail($data['delivery_id']);
+        $deal     = $delivery->deal;
 
+        if (!$deal) {
+            throw new Exception('Deal not found for this delivery.', 404);
+        }
+        $myId     = $this->resolveId($user, $effectiveId);
+
+        if ($delivery->status === 'accepted') {
+            throw new Exception('You have already accepted the delivery of this deal.', 400);
+        }
         if ($delivery->sender_id == $user->id) {
             throw new Exception('You cannot take action on your own delivery.', 403);
         }
@@ -139,10 +193,22 @@ class DealService
             if ($data['status'] === 'accepted') {
                 $delivery->update(['status' => 'accepted']);
                 $deal->update(['status' => 'completed']);
+                $buyer  = User::find($deal->buyer_id);
+                $seller = User::find($deal->seller_id);
+
+                $this->walletService->settleDeal(
+                    buyer:          $buyer,
+                    seller:         $seller,
+                    dealAmount:     (float) $deal->amount,
+                    dealId:         $deal->id
+                );
+                // ────────────────────────────────────────────────────
+
             } else {
                 $delivery->update(['status' => 'rejected']);
                 $deal->update(['status' => 'active']);
             }
+
             return $delivery;
         });
     }
@@ -150,7 +216,6 @@ class DealService
     public function handleExtensionRequest($user, $data, $effectiveId = null)
     {
         $deal = $this->getDealById($data['deal_id']);
-
         $myId = (int) $this->resolveId($user, $effectiveId);
 
         if (!$deal || ($deal->seller_id != $myId && $deal->buyer_id != $myId)) {
@@ -167,19 +232,19 @@ class DealService
             'status'       => 'pending',
         ]);
     }
+
     public function getAllExtensionsForUser($user, $effectiveId = null)
     {
         $myId = (int) $this->resolveId($user, $effectiveId);
 
         return \App\Models\DealExtension::whereHas('deal', function ($query) use ($myId) {
-            $query->where('seller_id', $myId)
-                  ->orWhere('buyer_id', $myId);
+            $query->where('seller_id', $myId)->orWhere('buyer_id', $myId);
         })
             ->with([
-            'deal:id,campaign_name,buyer_id,seller_id',
-            'requester:id,name',
-            'onBehalfOf:id,name'
-        ])
+                'deal:id,campaign_name,buyer_id,seller_id',
+                'requester:id,name',
+                'onBehalfOf:id,name',
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -187,8 +252,9 @@ class DealService
     public function handleExtensionAction($user, $data, $effectiveId = null)
     {
         $extension = \App\Models\DealExtension::findOrFail($data['extension_id']);
-        $deal = $extension->deal;
-        $myId = $this->resolveId($user, $effectiveId);
+        $deal      = $extension->deal;
+        $myId      = $this->resolveId($user, $effectiveId);
+
         if ($extension->requested_by == $user->id) {
             throw new Exception('You cannot approve your own extension request.', 403);
         }
@@ -207,5 +273,4 @@ class DealService
             return $extension;
         });
     }
-
 }

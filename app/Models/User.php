@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,14 @@ class User extends Authenticatable
         'website_link',
         'category_id',
         'is_exclusive',
+        'document',
+        'is_suspended',
+        'suspension_reason',
+        'suspended_at',
+        'suspended_by',
+        'last_login_at',
+        'two_fa_enabled',
+        'two_fa_secret',
     ];
 
     protected $casts = [
@@ -47,7 +56,7 @@ class User extends Authenticatable
     public function agencies()
     {
         return $this->belongsToMany(User::class, 'business_manager_assignments', 'user_id', 'manager_id')
-            ->withPivot('permissions')
+            ->withPivot('permissions', 'is_exclusive')
             ->withTimestamps();
     }
     public function clients()
@@ -110,34 +119,50 @@ class User extends Authenticatable
     }
 
     public function scopeOnline($query)
-    {return $query->whereNotNull('last_seen_at')->where('last_seen_at', '>', now()->subMinutes(2));}
+    {
+        return $query->whereNotNull('last_seen_at')->where('last_seen_at', '>', now()->subMinutes(2));
+    }
 
     // Chat relations
     // I blocked them
     public function blockedUsers()
-    {return $this->belongsToMany(User::class, 'user_blocks', 'user_id', 'blocked_id')->withTimestamps();}
+    {
+        return $this->belongsToMany(User::class, 'user_blocks', 'user_id', 'blocked_id')->withTimestamps();
+    }
 
     // They blocked me
     public function blockedByUsers()
-    {return $this->belongsToMany(User::class, 'user_blocks', 'blocked_id', 'user_id')->withTimestamps();}
+    {
+        return $this->belongsToMany(User::class, 'user_blocks', 'blocked_id', 'user_id')->withTimestamps();
+    }
 
     // I restricted them
     public function restrictedUsers()
-    {return $this->belongsToMany(User::class, 'user_restricts', 'user_id', 'restricted_id')->withTimestamps();}
+    {
+        return $this->belongsToMany(User::class, 'user_restricts', 'user_id', 'restricted_id')->withTimestamps();
+    }
 
     // They restricted me
     public function restrictedByUsers()
-    {return $this->belongsToMany(User::class, 'user_restricts', 'restricted_id', 'user_id')->withTimestamps();}
+    {
+        return $this->belongsToMany(User::class, 'user_restricts', 'restricted_id', 'user_id')->withTimestamps();
+    }
 
     // Blocks check
     public function hasBlocked(User $user): bool
-    {return $this->blockedUsers()->where('users.id', $user->id)->exists();}
+    {
+        return $this->blockedUsers()->where('users.id', $user->id)->exists();
+    }
 
     public function isBlockedBy(User $user): bool
-    {return $this->blockedByUsers()->where('users.id', $user->id)->exists();}
+    {
+        return $this->blockedByUsers()->where('users.id', $user->id)->exists();
+    }
 
     public function hasRestricted(User $user): bool
-    {return $this->restrictedUsers()->where('users.id', $user->id)->exists();}
+    {
+        return $this->restrictedUsers()->where('users.id', $user->id)->exists();
+    }
 
     // public function isRestrictedBy(User $user): bool
     // {
@@ -145,10 +170,18 @@ class User extends Authenticatable
     // }
 
     public function isOnline(): bool
-    {return $this->last_seen_at && $this->last_seen_at->greaterThan(now()->subMinutes(2));}
+    {
+        return $this->last_seen_at && $this->last_seen_at->greaterThan(now()->subMinutes(2));
+    }
 
     // public function deviceTokens()
     // {return $this->hasMany(DeviceToken::class);}
 
     //  Chat
+
+    // wallet
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\BaseRequest;
 
-
 class EventStoreRequest extends BaseRequest
 {
     /**
@@ -40,6 +39,11 @@ class EventStoreRequest extends BaseRequest
             'sponsors.*.payment_status' => 'nullable|in:pending,completed,failed',
             'collaborators' => 'nullable|array',
             'collaborators.*' => 'required|exists:users,id',
+
+            'tickets'            => 'nullable|array',
+        'tickets.*.type'     => 'required_with:tickets|string',
+        'tickets.*.price'    => 'required_with:tickets|numeric',
+        'tickets.*.capacity' => 'nullable|integer',
         ];
     }
 

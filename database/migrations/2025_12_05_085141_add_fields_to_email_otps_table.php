@@ -17,6 +17,7 @@ return new class () extends Migration {
             $table->string('phone')->nullable();
             $table->string('avatar')->nullable();
             $table->string('password')->nullable();
+            $table->string('document')->nullable();
         });
     }
 

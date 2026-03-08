@@ -59,6 +59,7 @@ class ContestRepository
         return DB::table('contest_participants')->insert([
             'contest_id' => $contestId,
             'user_id'    => $userId,
+            'ip_address' => request()->ip(),
             'payment_status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
@@ -82,12 +83,12 @@ class ContestRepository
     }
     public function setWinner($contestId, $winnerId)
     {
-        $contest = Contest::findOrFail($contestId);
-        $contest->update([
-            'winner_id' => $winnerId,
-            'status'    => 'completed'
-        ]);
+        $contest = $this->findById($contestId);
 
-        return $contest->load('creator');
+        return \App\Models\ContestWinner::firstOrCreate(
+            ['contest_id' => $contestId, 'user_id' => $winnerId],
+            ['prize_amount' => $contest->prize]
+        );
     }
+
 }

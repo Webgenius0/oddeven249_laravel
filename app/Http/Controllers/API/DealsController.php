@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\DealService;
+use App\Services\DisputeService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,21 +14,17 @@ class DealsController extends Controller
     use ApiResponse;
 
     protected $dealService;
-
-    public function __construct(DealService $dealService)
+    protected $disputeService;
+    public function __construct(DealService $dealService, DisputeService $disputeService)
     {
         $this->dealService = $dealService;
+        $this->disputeService = $disputeService;
     }
 
-    /**
-     * এটি চেক করবে ইউজার নিজে কাজ করছে নাকি কারো হয়ে (Proxy) কাজ করছে।
-     */
     private function getEffectiveUserId(Request $request)
     {
         $user = Auth::user();
         $influencerId = $request->header('X-Influencer-Id') ?: $request->input('influencer_id');
-
-        // যদি ইউজার ম্যানেজার বা এজেন্সি হয় এবং ইনফ্লুয়েন্সার আইডি পাঠানো হয়
         if (in_array($user->role, ['business_manager', 'agency']) && $influencerId) {
             return $influencerId;
         }
@@ -276,6 +273,24 @@ class DealsController extends Controller
             return $this->success($extensions, 'All extension requests retrieved successfully');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
+        }
+    }
+    public function raiseDispute(Request $request)
+    {
+        $effectiveId = $this->getEffectiveUserId($request);
+
+        $validated = $request->validate([
+            'deal_id'    => 'required|exists:deals,id',
+            'reason'     => 'required|string|max:1000',
+            'attachment' => 'nullable|file|max:5120',
+        ]);
+
+        try {
+            $dispute = $this->disputeService->raiseDispute(Auth::user(), $validated, $effectiveId);
+            return $this->success($dispute, 'Dispute raised successfully. The deal is now frozen.', 201);
+        } catch (\Exception $e) {
+            $code = ($e->getCode() >= 100 && $e->getCode() < 600) ? $e->getCode() : 422;
+            return $this->error(null, $e->getMessage(), $code);
         }
     }
 }

@@ -42,6 +42,9 @@ class ContestController extends Controller
     }
     public function store(Request $request)
     {
+        if (!auth()->check()) {
+            return $this->error(null, 'Unauthorized. Please login to create a contest.', 401);
+        }
         $validator = Validator::make($request->all(), [
             'creator_id'  => 'nullable|exists:users,id',
             'title'       => 'required|string|max:255',
@@ -213,7 +216,8 @@ class ContestController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'contest_id' => 'required|exists:contests,id',
-            'winner_id'  => 'required|exists:users,id',
+            'winner_ids' => 'required|array|min:1',
+            'winner_ids.*' => 'exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -223,12 +227,24 @@ class ContestController extends Controller
         try {
             $contest = $this->contestService->announceWinner(
                 $request->contest_id,
-                $request->winner_id
+                $request->winner_ids
             );
-
-            return $this->success($contest, 'Winner announced and contest completed successfully!');
+            return $this->success($contest, 'Winner(s) announced successfully!');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 400);
+        }
+    }
+    public function analytics(Request $request)
+    {
+        $request->validate([
+            'contest_id' => 'required|exists:contests,id',
+        ]);
+
+        try {
+            $data = $this->contestService->getContestAnalytics($request->contest_id);
+            return $this->success($data, 'Contest analytics retrieved successfully!', 200);
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), $e->getCode() ?: 500);
         }
     }
 }

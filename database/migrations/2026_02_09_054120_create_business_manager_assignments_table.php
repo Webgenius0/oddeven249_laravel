@@ -13,7 +13,7 @@ return new class () extends Migration {
 
             $table->foreignId('manager_id')->constrained('users')->onDelete('cascade');
             $table->json('permissions')->nullable();
-
+            $table->boolean('is_exclusive')->default(false);
             $table->timestamps();
             $table->unique(['user_id', 'manager_id']);
         });

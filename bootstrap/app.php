@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api')
                 ->group(base_path('routes/mizan_api.php'));
 
-            Route::middleware(['web', 'auth', 'verified'])
+            Route::middleware(['web', 'auth', 'verified']) // Apply middleware
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
@@ -38,8 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role'             => \App\Http\Middleware\CheckRole::class,
             'check_permission' => \App\Http\Middleware\CheckManagerPermission::class,
+            'check.exclusive' => \App\Http\Middleware\CheckExclusiveAgency::class,
             'last_seen'        => UpdateLastSeen::class,
-
         ]);
 
         $middleware->validateCsrfTokens(except: [
