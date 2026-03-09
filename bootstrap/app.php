@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             // 'api*',
             'broadcasting/auth',
+            'api/stripe/webhook',
         ]);
     })
     ->withSchedule(function (Schedule $schedule) {

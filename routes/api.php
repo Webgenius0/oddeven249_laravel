@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\InteractionController;
 use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SocialMediaController;
+use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\User\UserController;
@@ -49,6 +50,9 @@ Route::controller(LoginController::class)->prefix('users')->group(function () {
     Route::post('/refresh-token', 'refreshToken'); //new
 });
 
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
+
 // Protected — Token needed
 Route::controller(LoginController::class)->prefix('users')->middleware('auth:sanctum')->group(function () {
     Route::post('/logout', 'logout');
@@ -71,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/update-password', 'updatePassword');
         Route::delete('/delete-account', 'deleteAccount');
     });
+
 
     Route::prefix('deals')->controller(DealsController::class)->middleware(['auth:sanctum', 'role:influencer,advertiser,business_manager,agency','check.exclusive'])->group(function () {
         Route::get('/', 'index')
@@ -138,8 +143,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/messages/reply', 'sendMessage');
     });
     Route::prefix('wallet')->controller(WalletController::class)->group(function () {
-        Route::get('/', 'index');
+        Route::get('/summary', 'summary');
         Route::get('/transactions', 'transactions');
-        Route::post('/withdraw', 'withdraw');
+        Route::post('/topup', 'createTopup');
+        Route::post('/withdraw', 'requestWithdrawal');
+        Route::get('/connect', 'connectBank');
+        Route::get('/connect/status', 'connectStatus');
     });
+
 });

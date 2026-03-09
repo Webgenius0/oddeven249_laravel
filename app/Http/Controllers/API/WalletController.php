@@ -3,71 +3,110 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\StripeService;
 use App\Services\WalletService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(protected WalletService $walletService)
-    {
-    }
+    protected $walletService;
+    protected $stripeService;
 
-    /**
-     * Wallet summary — balance দেখো
-     */
-    public function index()
+    public function __construct(WalletService $walletService, StripeService $stripeService)
+    {
+        $this->stripeService = $stripeService;
+        $this->walletService  = $walletService;
+    }
+    public function summary()
     {
         try {
-            $summary = $this->walletService->getWalletSummary(Auth::user());
-            return $this->success($summary, 'Wallet retrieved successfully');
+            $data = $this->walletService->getWalletSummary(auth()->user());
+            return $this->success($data, 'Wallet summary fetched.');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
         }
     }
-
-    /**
-     * Transaction history
-     */
     public function transactions(Request $request)
     {
         try {
-            $transactions = $this->walletService->getTransactionHistory(
-                Auth::user(),
-                $request->input('per_page', 15)
+            $data = $this->walletService->getTransactionHistory(
+                auth()->user(),
+                $request->get('per_page', 15)
             );
-            return $this->success($transactions, 'Transactions retrieved successfully');
+            return $this->success($data, 'Transactions fetched.');
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 500);
+        }
+    }
+    public function createTopup(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:10',
+        ]);
+
+        try {
+            $result = $this->stripeService->createTopupSession(
+                auth()->user(),
+                (float) $request->amount
+            );
+            return $this->success($result, 'Checkout session created.');
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), $e->getCode() ?: 500);
+        }
+    }
+    public function connectBank()
+    {
+        try {
+            $url = $this->stripeService->createConnectOnboardingLink(auth()->user());
+            return $this->success(['onboarding_url' => $url], 'Onboarding link generated.');
+        } catch (\Exception $e) {
+            return $this->error(null, $e->getMessage(), 500);
+        }
+    }
+    public function connectStatus()
+    {
+        try {
+            $enabled = $this->stripeService->checkConnectStatus(auth()->user());
+            return $this->success(['connected' => $enabled], 'Status fetched.');
         } catch (\Exception $e) {
             return $this->error(null, $e->getMessage(), 500);
         }
     }
 
-    /**
-     * Withdrawal request
-     */
-    public function withdraw(Request $request)
+    public function requestWithdrawal(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'amount' => 'required|numeric|min:1',
+        $request->validate([
+            'amount' => 'required|numeric|min:10',
         ]);
 
-        if ($validator->fails()) {
-            return $this->error($validator->errors(), 'Validation Error', 422);
-        }
+        $user = auth()->user();
 
-        try {
-            $transaction = $this->walletService->withdraw(
-                Auth::user(),
-                $request->amount,
-                'Withdrawal request'
-            );
-            return $this->success($transaction, 'Withdrawal request submitted successfully');
-        } catch (\Exception $e) {
-            return $this->error(null, $e->getMessage(), 422);
-        }
+        return DB::transaction(function () use ($user, $request) {
+            try {
+                $transfer = $this->stripeService->processWithdrawal($user, (float) $request->amount);
+                $this->walletService->withdraw(
+                    user:        $user,
+                    amount:      (float) $request->amount,
+                    description: 'Withdrawal to bank account'
+                );
+                \App\Models\WithdrawalRequest::create([
+                    'user_id'            => $user->id,
+                    'amount'             => $request->amount,
+                    'currency'           => 'USD',
+                    'stripe_transfer_id' => $transfer['transfer_id'],
+                    'status'             => $transfer['status'],
+                ]);
+
+                return $this->success(null, 'Withdrawal processed successfully.');
+            } catch (\Exception $e) {
+                return $this->error(null, $e->getMessage(), $e->getCode() ?: 500);
+            }
+        });
     }
 }

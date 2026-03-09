@@ -21,7 +21,7 @@ class WalletService
                 'held_balance'      => 0,
                 'total_earned'      => 0,
                 'total_withdrawn'   => 0,
-                'currency'          => 'BDT',
+                'currency'          => 'USD',
                 'is_active'         => true,
             ]
         );

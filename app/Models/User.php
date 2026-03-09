@@ -40,6 +40,9 @@ class User extends Authenticatable
         'last_login_at',
         'two_fa_enabled',
         'two_fa_secret',
+        'stripe_customer_id',
+        'stripe_connect_id',
+        'stripe_connect_enabled'
     ];
 
     protected $casts = [
