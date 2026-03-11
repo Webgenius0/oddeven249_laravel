@@ -130,10 +130,12 @@ class EventService
         if (!$ticket) {
             throw new Exception("Ticket not found for this event.", 404);
         }
+
         $quantity = (int) ($data['quantity'] ?? 1);
         if ($quantity < 1) {
             throw new Exception("Quantity must be at least 1.", 422);
         }
+
         if ($ticket->capacity) {
             $sold = DB::table('event_participants')
                 ->where('event_ticket_id', $ticket->id)
@@ -143,7 +145,6 @@ class EventService
                 throw new Exception("Not enough tickets available. Remaining: " . ($ticket->capacity - $sold), 422);
             }
         }
-
         $existing = DB::table('event_participants')
             ->where('event_id', $data['event_id'])
             ->where('participant_id', $userId)
@@ -152,58 +153,66 @@ class EventService
 
         return DB::transaction(function () use ($user, $data, $ticket, $quantity, $existing, $event) {
             $totalPrice    = $ticket->price * $quantity;
-            $paymentStatus = 'free';
+            $paymentStatus = $totalPrice > 0 ? 'paid' : 'free';
 
             if ($totalPrice > 0) {
                 $wallet = $this->walletService->getOrCreateWallet($user);
 
                 if ($wallet->available_balance < $totalPrice) {
-                    throw new Exception(
-                        "Insufficient balance. Required: {$totalPrice}, Available: {$wallet->available_balance}",
-                        422
-                    );
+                    throw new Exception("Insufficient balance. Required: {$totalPrice}, Available: {$wallet->available_balance}", 422);
                 }
 
                 $this->walletService->withdraw(
-                    user:        $user,
-                    amount:      $totalPrice,
+                    user: $user,
+                    amount: $totalPrice,
                     description: "Ticket purchase ({$quantity}x) — Event #{$data['event_id']}"
                 );
 
                 $organizer = \App\Models\User::find($event->creator_id);
                 if ($organizer) {
                     $this->walletService->deposit(
-                        user:        $organizer,
-                        amount:      $totalPrice,
-                        type:        'event_ticket_payment',
-                        sourceType:  'event',
-                        sourceId:    $data['event_id'],
+                        user: $organizer,
+                        amount: $totalPrice,
+                        type: 'event_ticket_payment',
+                        sourceType: 'event',
+                        sourceId: $data['event_id'],
                         description: "{$quantity}x Ticket from {$user->name} — Event #{$data['event_id']}"
                     );
                 }
+            }
 
-                $paymentStatus = 'paid';
+            // --- Unique 10-Digit Code Generation ---
+            $ticketCode = null;
+            if (!$existing) {
+                do {
+                    $ticketCode = strtoupper(\Illuminate\Support\Str::random(10));
+                } while (DB::table('event_participants')->where('ticket_code', $ticketCode)->exists());
             }
 
             if ($existing) {
                 DB::table('event_participants')
                     ->where('id', $existing->id)
                     ->increment('quantity', $quantity);
+
+                $finalCode = $existing->ticket_code;
             } else {
                 DB::table('event_participants')->insert([
                     'event_id'        => $data['event_id'],
                     'participant_id'  => $user->id,
                     'event_ticket_id' => $ticket->id,
+                    'ticket_code'     => $ticketCode,
                     'quantity'        => $quantity,
                     'used_quantity'   => 0,
                     'payment_status'  => $paymentStatus,
                     'created_at'      => now(),
                     'updated_at'      => now(),
                 ]);
+                $finalCode = $ticketCode;
             }
 
             return [
                 'event_id'       => $data['event_id'],
+                'ticket_code'    => $finalCode,
                 'ticket_type'    => $ticket->ticket_type,
                 'quantity'       => $quantity,
                 'amount_charged' => $totalPrice,

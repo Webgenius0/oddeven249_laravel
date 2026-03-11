@@ -15,6 +15,7 @@ return new class () extends Migration {
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
             $table->foreignId('participant_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('event_ticket_id')->constrained('event_tickets')->onDelete('cascade');
+            $table->string('ticket_code', 10)->unique()->nullable()->index();
             $table->enum('payment_status', ['pending', 'paid', 'free', 'rejected'])->default('pending');
             $table->integer('quantity')->default(1);
             $table->integer('used_quantity')->default(0);

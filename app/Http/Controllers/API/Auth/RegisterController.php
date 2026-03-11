@@ -95,9 +95,6 @@ class RegisterController extends Controller
             'data' => [],
         ], 200);
     }
-    /**
-     * Register User - temporary storage with OTP
-     */
     public function userRegister(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -186,10 +183,6 @@ class RegisterController extends Controller
 
         return $this->success($user, 'OTP verified successfully', 200);
     }
-
-    /**
-     * Resend OTP
-     */
     public function otpResend(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -219,10 +212,6 @@ class RegisterController extends Controller
 
         return $this->success([], 'OTP Resend has been sent successfully.', 200);
     }
-
-    /**
-     * Check if email is available
-     */
     public function emailExists(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -244,11 +233,6 @@ class RegisterController extends Controller
 
         return $this->success([], 'Email is available', 200);
     }
-
-
-    /**
- * Forgot Password - Send OTP
- */
     public function forgotPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -294,10 +278,6 @@ class RegisterController extends Controller
             'otp' => $code, // Remove this in production
         ], 'Password reset OTP has been sent to your email', 200);
     }
-
-    /**
-     * Verify Forgot Password OTP
-     */
     public function verifyForgotPasswordOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -331,10 +311,6 @@ class RegisterController extends Controller
             'email' => $request->email,
         ], 'OTP verified successfully. You can now reset your password.', 200);
     }
-
-    /**
-     * Reset Password
-     */
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -366,10 +342,6 @@ class RegisterController extends Controller
 
         return $this->success([], 'Password has been reset successfully', 200);
     }
-
-    /**
-     * Resend Forgot Password OTP
-     */
     public function resendForgotPasswordOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -401,7 +373,6 @@ class RegisterController extends Controller
         ]);
 
         // Mail::to($tempUser->email)->send(new ForgotPasswordOtp($tempUser, $code));
-
         return $this->success([
             'otp' => $code, // Remove this in production
         ], 'Password reset OTP has been resent successfully.', 200);

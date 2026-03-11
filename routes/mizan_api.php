@@ -16,6 +16,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/events/my-invitations', 'myInvitations');
         Route::post('/events/invitation/request-payment', 'requestPayment');
         Route::post('/events/invitation/approve-payment', 'approvePayment');
+        Route::post('/events/verify-ticket', 'verifyTicketCode');
         Route::get('/events/my-sent-invitations', 'mySentInvitations');
+        Route::get('/events/get-user-tickets', 'getUserTickets');
+        Route::get('/events/ticket-details', 'showTicketDetails');
     });
 });

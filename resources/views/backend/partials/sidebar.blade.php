@@ -196,6 +196,22 @@
                            <span>Deals Management</span>
                        </a>
                    </li>
+                   <li class="sidebar-list">
+                       <i class="fa fa-thumb-tack"></i>
+                       <a class="sidebar-link sidebar-title link-nav {{ request()->routeIs('admin.voucher.*') ? 'active' : '' }}"
+                           href="{{ route('admin.voucher.index') }}">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                               fill="none" stroke="#ffffff" stroke-width="1" stroke-linecap="round"
+                               stroke-linejoin="round">
+                               <path d="M15 5l-1.761 1.761a2 2 0 0 0 0 2.828l1 1a2 2 0 0 1 0 2.828l-1.761 1.761"></path>
+                               <path d="M3 5.8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12.4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5.8Z">
+                               </path>
+                               <path d="M9 10h.01"></path>
+                               <path d="M9 14h.01"></path>
+                           </svg>
+                           <span>Voucher Requests</span>
+                       </a>
+                   </li>
                </ul>
                <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>
            </div>

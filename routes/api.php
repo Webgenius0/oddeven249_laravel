@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\SupportController;
 use App\Http\Controllers\Api\SystemSettingController;
 use App\Http\Controllers\Api\User\UserController;
+use App\Http\Controllers\Api\VoucherController;
 use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
 
@@ -150,5 +151,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/connect', 'connectBank');
         Route::get('/connect/status', 'connectStatus');
     });
+    Route::controller(VoucherController::class)->group(function () {
+        Route::get('/vouchers', 'index');
+        Route::post('/vouchers/store', 'store');
+        Route::get('/vouchers/all', 'getAllVouchers');
+        Route::get('/vouchers/{id}', 'show');
+        Route::delete('/vouchers/{id}', 'destroy');
 
+    });
 });

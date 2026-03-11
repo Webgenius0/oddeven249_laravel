@@ -12,6 +12,7 @@ use App\Http\Controllers\Web\Backend\SystemSettingController;
 use App\Http\Controllers\Web\Backend\FeedbackController;
 use App\Http\Controllers\Web\Backend\SupportController;
 use App\Http\Controllers\Web\Backend\UserController;
+use App\Http\Controllers\Web\Backend\VoucherController;
 
 Route::get('/dashboard', [DashBoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -74,4 +75,9 @@ Route::prefix('deal')->name('deal.')->group(function () {
     Route::get('/{id}', [DealController::class, 'show'])->name('show');
     Route::post('/dispute/resolve', [DealController::class, 'resolveDispute'])->name('dispute.resolve');
     Route::post('/dispute/{id}/under-review', [DealController::class, 'markUnderReview'])->name('dispute.review');
+});
+Route::prefix('voucher')->group(function () {
+    Route::get('/', [VoucherController::class, 'index'])->name('voucher.index');
+    Route::get('/status/{id}', [VoucherController::class, 'status'])->name('voucher.status');
+    Route::delete('/delete/{id}', [VoucherController::class, 'destroy'])->name('voucher.destroy');
 });
